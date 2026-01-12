@@ -1,16 +1,21 @@
 package com.example.lrcapp
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lrcapp.adapter.SubtitleFileAdapter
@@ -41,11 +46,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchSmartNaming: SwitchMaterial
     private lateinit var switchTimePrecision: SwitchMaterial
     private lateinit var exportButtonsLayout: android.widget.LinearLayout
+    private lateinit var tvOutputDir: TextView
+    private lateinit var btnSelectOutputDir: Button
 
     private val files = mutableListOf<SubtitleFile>()
     private var settings = AppSettings()
+    private var openPickerOnPermissionGrant = false
 
-    // 文件選擇器
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
@@ -54,15 +61,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 權限請求
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.all { it.value }
-        if (allGranted) {
-            openFilePicker()
+        if (permissions.values.all { it }) {
+            if (openPickerOnPermissionGrant) {
+                openFilePicker()
+            }
         } else {
-            Toast.makeText(this, "需要存儲權限才能選擇文件", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "未授予讀取外部儲存的權限", Toast.LENGTH_SHORT).show()
+        }
+        openPickerOnPermissionGrant = false
+    }
+
+    private val settingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                if (openPickerOnPermissionGrant) {
+                    openFilePicker()
+                }
+            } else {
+                Toast.makeText(this, "未授予所有檔案存取權", Toast.LENGTH_SHORT).show()
+            }
+            openPickerOnPermissionGrant = false
+        }
+    }
+
+    private val directoryPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            handleDirectorySelection(uri)
         }
     }
 
@@ -74,6 +103,7 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
         setupRecyclerView()
         setupClickListeners()
+        checkAndRequestPermissions()
     }
 
     private fun initViews() {
@@ -87,12 +117,15 @@ class MainActivity : AppCompatActivity() {
         switchSmartNaming = findViewById(R.id.switchSmartNaming)
         switchTimePrecision = findViewById(R.id.switchTimePrecision)
         exportButtonsLayout = findViewById(R.id.exportButtonsLayout)
+        tvOutputDir = findViewById(R.id.tvOutputDir)
+        btnSelectOutputDir = findViewById(R.id.btnSelectOutputDir)
     }
 
     private fun loadSettings() {
         settings = SettingsManager.loadSettings(this)
         switchSmartNaming.isChecked = settings.smartNaming
         switchTimePrecision.isChecked = settings.timePrecision
+        updateOutputDirDisplay()
 
         switchSmartNaming.setOnCheckedChangeListener { _, isChecked ->
             settings.smartNaming = isChecked
@@ -115,7 +148,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         btnSelectFiles.setOnClickListener {
-            checkPermissionsAndOpenPicker()
+            openPickerOnPermissionGrant = true
+            checkAndRequestPermissions()
         }
 
         btnConvert.setOnClickListener {
@@ -133,48 +167,44 @@ class MainActivity : AppCompatActivity() {
         btnDownloadAll.setOnClickListener {
             downloadAllFiles()
         }
+
+        btnSelectOutputDir.setOnClickListener {
+            directoryPickerLauncher.launch(null)
+        }
     }
 
-    private fun checkPermissionsAndOpenPicker() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ 使用 READ_MEDIA_FILES
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_MEDIA_FILES
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                openFilePicker()
+    private fun checkAndRequestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:$packageName")
+                settingsLauncher.launch(intent)
             } else {
-                permissionLauncher.launch(arrayOf(Manifest.permission.READ_MEDIA_FILES))
+                if (openPickerOnPermissionGrant) {
+                    openFilePicker()
+                    openPickerOnPermissionGrant = false
+                }
             }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10+ 不需要權限，直接打開
-            openFilePicker()
         } else {
-            // Android 10 以下需要 READ_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                openFilePicker()
+            val permission = Manifest.permission.READ_EXTERNAL_STORAGE
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(arrayOf(permission))
             } else {
-                permissionLauncher.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
+                if (openPickerOnPermissionGrant) {
+                    openFilePicker()
+                    openPickerOnPermissionGrant = false
+                }
             }
         }
     }
 
     private fun openFilePicker() {
-        val mimeTypes = arrayOf(
-            "text/vtt",
-            "text/x-subrip",
-            "text/x-ssa",
-            "text/x-ass",
-            "application/x-subrip",
-            "application/x-subtitle",
-            "*/*"
-        )
-        filePickerLauncher.launch(mimeTypes)
+        val mimeTypes = arrayOf("*/*")
+        try {
+            filePickerLauncher.launch(mimeTypes)
+        } catch (e: Exception) {
+            Toast.makeText(this, "無法打開文件選擇器: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun handleSelectedFiles(uris: List<Uri>) {
@@ -186,7 +216,6 @@ class MainActivity : AppCompatActivity() {
                     val fileName = getFileName(uri)
                     val fileSize = getFileSize(uri)
 
-                    // 前置校驗
                     val (isValid, errorMessage) = FileValidator.validateFile(fileName, fileSize)
 
                     val subtitleFile = SubtitleFile(
@@ -242,18 +271,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startConversion() {
-        // 更新設置
         settings = SettingsManager.loadSettings(this)
-
-        // 重置進度
         progressBar.progress = 0
         progressBar.visibility = android.view.View.VISIBLE
         tvProgress.visibility = android.view.View.VISIBLE
         exportButtonsLayout.visibility = android.view.View.GONE
-
-        // 只處理待處理和錯誤狀態的文件（重新處理錯誤文件）
         val filesToProcess = files.filter { it.status == FileStatus.PENDING || it.status == FileStatus.ERROR }
-
         if (filesToProcess.isEmpty()) {
             Toast.makeText(this, "沒有需要轉換的文件", Toast.LENGTH_SHORT).show()
             progressBar.visibility = android.view.View.GONE
@@ -265,27 +288,17 @@ class MainActivity : AppCompatActivity() {
             val converter = SubtitleConverter(this@MainActivity, settings)
             var processedCount = 0
 
-            for ((index, file) in filesToProcess.withIndex()) {
+            for (file in filesToProcess) {
                 val fileIndex = files.indexOf(file)
                 if (fileIndex < 0) continue
-
-                // 更新狀態為處理中
                 withContext(Dispatchers.Main) {
                     files[fileIndex].status = FileStatus.PROCESSING
                     adapter.updateFile(fileIndex, files[fileIndex])
                 }
-
                 try {
-                    // 轉換文件
                     val lrcContent = converter.convertToLrc(file.uri, file.fileName)
-
-                    if (lrcContent != null && lrcContent.isNotEmpty()) {
-                        // 生成輸出文件名
-                        val outputFileName = FileNameHelper.smartNaming(
-                            file.fileName,
-                            settings.smartNaming
-                        )
-
+                    if (lrcContent?.isNotEmpty() == true) {
+                        val outputFileName = FileNameHelper.smartNaming(file.fileName, settings.smartNaming)
                         withContext(Dispatchers.Main) {
                             files[fileIndex].status = FileStatus.SUCCESS
                             files[fileIndex].outputFileName = outputFileName
@@ -294,11 +307,7 @@ class MainActivity : AppCompatActivity() {
                             adapter.updateFile(fileIndex, files[fileIndex])
                         }
                     } else {
-                        withContext(Dispatchers.Main) {
-                            files[fileIndex].status = FileStatus.ERROR
-                            files[fileIndex].errorMessage = "解析錯誤"
-                            adapter.updateFile(fileIndex, files[fileIndex])
-                        }
+                        throw Exception("解析錯誤或內容為空")
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -308,30 +317,21 @@ class MainActivity : AppCompatActivity() {
                         adapter.updateFile(fileIndex, files[fileIndex])
                     }
                 }
-
                 processedCount++
                 val progress = (processedCount * 100) / filesToProcess.size
-
                 withContext(Dispatchers.Main) {
                     progressBar.progress = progress
                     tvProgress.text = "進度: $progress%"
                 }
             }
-
             withContext(Dispatchers.Main) {
                 progressBar.visibility = android.view.View.GONE
                 tvProgress.visibility = android.view.View.GONE
-
                 val successCount = files.count { it.status == FileStatus.SUCCESS }
                 if (successCount > 0) {
                     exportButtonsLayout.visibility = android.view.View.VISIBLE
                 }
-
-                Toast.makeText(
-                    this@MainActivity,
-                    "轉換完成！成功: $successCount / ${filesToProcess.size}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this@MainActivity, "轉換完成！成功: $successCount / ${filesToProcess.size}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -341,79 +341,63 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "文件內容為空", Toast.LENGTH_SHORT).show()
             return
         }
-
         lifecycleScope.launch(Dispatchers.IO) {
-            val savedFile = StorageHelper.saveLrcFile(
-                this@MainActivity,
-                file.outputFileName!!,
-                file.lrcContent!!
-            )
-
+            val outputDirUri = settings.outputDirUri?.let { Uri.parse(it) }
+            val savedFile = StorageHelper.saveLrcFile(this@MainActivity, outputDirUri, file.outputFileName!!, file.lrcContent!!)
             withContext(Dispatchers.Main) {
-                if (savedFile != null) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "已保存: ${savedFile.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "保存失敗", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(this@MainActivity, if (savedFile != null) "已保存: $savedFile" else "保存失敗", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun downloadAsZip() {
         val successFiles = files.filter { it.status == FileStatus.SUCCESS && it.lrcContent != null && it.outputFileName != null }
-
         if (successFiles.isEmpty()) {
             Toast.makeText(this, "沒有可導出的文件", Toast.LENGTH_SHORT).show()
             return
         }
-
         lifecycleScope.launch(Dispatchers.IO) {
             val filesToZip = successFiles.map { it.outputFileName!! to it.lrcContent!! }
             val zipFileName = StorageHelper.generateZipFileName()
-
-            val zipFile = StorageHelper.saveAsZip(
-                this@MainActivity,
-                filesToZip,
-                zipFileName
-            )
-
+            val outputDirUri = settings.outputDirUri?.let { Uri.parse(it) }
+            val zipFile = StorageHelper.saveAsZip(this@MainActivity, outputDirUri, filesToZip, zipFileName)
             withContext(Dispatchers.Main) {
-                if (zipFile != null) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "已保存 ZIP: ${zipFile.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(this@MainActivity, "ZIP 保存失敗", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(this@MainActivity, if (zipFile != null) "已保存 ZIP: $zipFile" else "ZIP 保存失敗", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun downloadAllFiles() {
         val successFiles = files.filter { it.status == FileStatus.SUCCESS && it.lrcContent != null && it.outputFileName != null }
-
         if (successFiles.isEmpty()) {
             Toast.makeText(this, "沒有可導出的文件", Toast.LENGTH_SHORT).show()
             return
         }
-
         lifecycleScope.launch(Dispatchers.IO) {
             val filesToSave = successFiles.map { it.outputFileName!! to it.lrcContent!! }
-            val savedFiles = StorageHelper.saveMultipleFiles(this@MainActivity, filesToSave)
-
+            val outputDirUri = settings.outputDirUri?.let { Uri.parse(it) }
+            val savedFiles = StorageHelper.saveMultipleFiles(this@MainActivity, outputDirUri, filesToSave)
             withContext(Dispatchers.Main) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "已保存 ${savedFiles.size} 個文件",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this@MainActivity, "已保存 $savedFiles 個文件", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun handleDirectorySelection(uri: Uri) {
+        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        settings.outputDirUri = uri.toString()
+        SettingsManager.saveSettings(this, settings)
+        updateOutputDirDisplay()
+    }
+
+    private fun updateOutputDirDisplay() {
+        val uriString = settings.outputDirUri
+        if (uriString != null) {
+            val uri = Uri.parse(uriString)
+            val docFile = DocumentFile.fromTreeUri(this, uri)
+            tvOutputDir.text = "儲存位置: ${docFile?.name}"
+        } else {
+            tvOutputDir.text = "儲存位置: 預設下載目錄"
         }
     }
 }

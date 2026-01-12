@@ -94,6 +94,27 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 儲存位置 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvOutputDir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="儲存位置: 預設下載目錄"
+                    android:padding="8dp"/>
+
+                <Button
+                    android:id="@+id/btnSelectOutputDir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="選擇目錄"/>
+            </LinearLayout>
+
             <!-- 操作按鈕區域 -->
             <LinearLayout
                 android:layout_width="match_parent"
