@@ -9,15 +9,17 @@
 ## 主要功能
 
 ### 📁 文件導入模塊
-- **系統文件選擇器集成**：使用 Android 原生文件管理器，支持批量選擇
+- **系統文件選擇器集成**：使用 Android 原生文件管理器（`OpenMultipleDocuments`），支持批量選擇
 - **格式過濾（現況）**：目前選擇器以 `*/*` 顯示所有檔案；選取後會再用副檔名做格式驗證（未在選擇器內預先過濾）
 - **前置校驗**：
-  - 格式校驗：檢查文件副檔名，不匹配則標記錯誤
-  - 體積校驗：超過 10MB 的文件將被攔截並提示
+  - 格式校驗：檢查文件副檔名，不匹配則標記「錯誤」狀態並顯示「不支持的格式」
+  - 體積校驗：超過 10MB 的文件將被標記「錯誤」狀態並顯示「文件過大（超過 10MB）」
+- **文件列表管理**：選擇新文件時會**清空舊列表**，替換為新選擇的文件
 
 ### ⚙️ 應用設置模塊
-- **智能命名清理**：自動移除文件名中的媒體副檔名（如 music.mp3.ass → music.lrc）
-- **時間精度優化**：保留毫秒/百分秒精度，確保 LRC 歌詞播放時的時間同步（默認開啟）
+- **智能命名清理**：自動移除文件名中的媒體副檔名（如 music.mp3.ass → music.lrc），**預設啟用**（目前代碼中硬編碼為 `true`）
+- **時間精度優化**：保留毫秒/百分秒精度，確保 LRC 歌詞播放時的時間同步，**預設啟用**（目前代碼中硬編碼為 `true`）
+- **輸出目錄選擇**：可選擇自訂輸出資料夾（使用 SAF），未選擇則使用預設下載目錄
 
 ### 🔄 核心轉換引擎
 - **多格式解析器**：
@@ -33,16 +35,18 @@
 - **時間軸重構**：統一轉換為 LRC 標準格式 `[mm:ss.xx]`
 
 ### 📊 進度與反饋機制
-- **實時進度條**：根據已處理文件數量動態更新百分比
-- **狀態通知**：Toast 提示操作結果
+- **實時進度條**：使用 `LinearProgressIndicator`，根據已處理文件數量動態更新百分比（0-100%）
+- **狀態通知**：Toast 提示操作結果（如「已選擇 X 個文件」、「轉換完成！成功: X / Y」等）
 - **結果列表**：
-  - 成功：顯示綠色標記與輸出文件名
-  - 失敗：顯示紅色標記與具體失敗原因
+  - 待處理：灰色標記
+  - 處理中：藍色標記
+  - 成功：綠色標記與輸出文件名
+  - 失敗：紅色標記與具體失敗原因
 
 ### 💾 文件導出模塊
-- **單個導出**：每個轉換成功的文件可單獨下載
-- **批量壓縮導出**：將所有成功轉換的文件打包為 ZIP（自動命名，附加時間戳）
-- **直接批量導出**：連續寫入多個文件，不進行壓縮
+- **自動保存**：轉換完成後，所有成功轉換的文件會**自動保存**到指定的輸出目錄（預設或使用者選擇的目錄）
+- **批量保存**：使用 `saveMultipleFiles()` 方法，連續寫入多個 LRC 文件，不進行壓縮
+- **保存結果提示**：顯示已保存的文件數量
 
 ### 🔐 數據存儲與兼容性
 - **權限處理**：
@@ -59,70 +63,119 @@
 ```
 lrcapp/
 ├── ANDROID_STUDIO_GUIDE.md        # Android Studio 安裝與使用教學
+├── README.md                      # 專案說明文件
 ├── app/
-│   ├── build.gradle
-│   ├── proguard-rules.pro
+│   ├── build.gradle               # App 模組的 Gradle 配置
+│   ├── proguard-rules.pro         # ProGuard 混淆規則
 │   └── src/main/
-│       ├── AndroidManifest.xml
+│       ├── AndroidManifest.xml   # Android 應用清單
+│       ├── ic_launcher-playstore.png  # Play Store 圖標
 │       ├── java/com/example/lrcapp/
-│       │   ├── MainActivity.kt              # 主活動
+│       │   ├── MainActivity.kt              # 主活動（UI 控制與業務邏輯）
 │       │   ├── adapter/
-│       │   │   └── SubtitleFileAdapter.kt    # RecyclerView 適配器
+│       │   │   └── SubtitleFileAdapter.kt   # RecyclerView 適配器（文件列表顯示）
 │       │   ├── converter/
-│       │   │   └── SubtitleConverter.kt     # 核心轉換引擎
+│       │   │   └── SubtitleConverter.kt    # 核心轉換引擎（多格式解析與轉換）
 │       │   ├── model/
 │       │   │   ├── SubtitleFile.kt          # 字幕文件數據模型
 │       │   │   └── AppSettings.kt           # 應用設置模型
 │       │   └── util/
-│       │       ├── FileValidator.kt         # 文件驗證工具
-│       │       ├── FileNameHelper.kt        # 文件名處理工具
-│       │       ├── StorageHelper.kt         # 存儲工具
-│       │       └── SettingsManager.kt       # 設置管理工具
+│       │       ├── FileValidator.kt         # 文件驗證工具（格式與大小檢查）
+│       │       ├── FileNameHelper.kt        # 文件名處理工具（智能命名）
+│       │       ├── StorageHelper.kt          # 存儲工具（文件保存與 ZIP 壓縮）
+│       │       └── SettingsManager.kt       # 設置管理工具（SharedPreferences）
 │       └── res/
+│           ├── drawable/
+│           │   ├── ic_launcher_background.xml      # 啟動圖標背景
+│           │   ├── ic_launcher_foreground.xml      # 啟動圖標前景
+│           │   ├── status_background_pending.xml   # 待處理狀態背景
+│           │   ├── status_background_processing.xml # 處理中狀態背景
+│           │   ├── status_background_success.xml   # 成功狀態背景
+│           │   └── status_background_error.xml     # 錯誤狀態背景
 │           ├── layout/
 │           │   ├── activity_main.xml        # 主界面布局
 │           │   └── item_subtitle_file.xml   # 文件列表項布局
+│           ├── mipmap-*/                      # 啟動圖標（多種密度）
+│           │   ├── ic_launcher.webp
+│           │   └── ic_launcher_round.webp
+│           ├── mipmap-anydpi-v26/
+│           │   ├── ic_launcher.xml          # 自適應圖標（API 26+）
+│           │   └── ic_launcher_round.xml
 │           └── values/
-│               ├── colors.xml
-│               ├── strings.xml
-│               └── themes.xml
-├── build.gradle
-├── settings.gradle
-├── gradle/                       # Gradle Wrapper
-├── gradlew
-├── gradlew.bat
-├── gradle.properties
-├── local.properties              # 本機 SDK 路徑（通常不提交）
-└── .gitignore
+│               ├── colors.xml               # 顏色資源
+│               ├── strings.xml              # 字串資源
+│               └── themes.xml               # 主題樣式
+├── build.gradle                   # 專案級 Gradle 配置
+├── settings.gradle                # Gradle 設定（專案名稱與模組）
+├── gradle/
+│   └── wrapper/
+│       ├── gradle-wrapper.jar     # Gradle Wrapper JAR
+│       └── gradle-wrapper.properties  # Gradle 版本配置
+├── gradlew                        # Gradle Wrapper 腳本（Unix）
+├── gradlew.bat                    # Gradle Wrapper 腳本（Windows）
+├── gradle.properties              # Gradle 屬性配置
+├── local.properties               # 本機 SDK 路徑（通常不提交到版本控制）
+└── .gitignore                     # Git 忽略規則
 ```
 
 ## 技術規格
 
-- **語言**: Kotlin
+- **開發語言**: Kotlin 1.9.22
 - **Compile SDK**: 34 (Android 14)
-- **Min SDK**: 24 (Android 7.0)
+- **Min SDK**: 24 (Android 7.0 Nougat)
 - **Target SDK**: 34 (Android 14)
+- **應用版本**: 1.0 (versionCode: 1)
 - **Android Gradle Plugin (AGP)**: 8.2.0
 - **Gradle Wrapper**: 9.0-milestone-1
-- **Kotlin 版本**: 1.9.22
+- **Java 版本**: 1.8 (sourceCompatibility / targetCompatibility / jvmTarget)
+- **構建特性**: ViewBinding 啟用
+- **命名空間**: `com.example.lrcapp`
 
 ## 依賴項
 
-- AndroidX Core KTX (`androidx.core:core-ktx`)
-- AndroidX AppCompat (`androidx.appcompat:appcompat`)
-- Material Design Components (`com.google.android.material:material`)
-- ConstraintLayout (`androidx.constraintlayout:constraintlayout`)
-- RecyclerView (`androidx.recyclerview:recyclerview`)
-- Lifecycle Runtime KTX (`androidx.lifecycle:lifecycle-runtime-ktx`)
-- Activity KTX (`androidx.activity:activity-ktx`)
-- DocumentFile / SAF (`androidx.documentfile:documentfile`)
-- Kotlin Coroutines (`org.jetbrains.kotlinx:kotlinx-coroutines-android`)
+### 主要依賴（Implementation）
+
+- **AndroidX Core KTX** `1.12.0` - Kotlin 擴展庫
+- **AndroidX AppCompat** `1.6.1` - 向後兼容支持庫
+- **Material Design Components** `1.11.0` - Material Design 組件
+- **ConstraintLayout** `2.1.4` - 約束布局
+- **RecyclerView** `1.3.2` - 列表視圖組件
+- **Lifecycle Runtime KTX** `2.7.0` - 生命週期管理（Kotlin 擴展）
+- **Activity KTX** `1.8.2` - Activity Kotlin 擴展
+- **Kotlin Coroutines Android** `1.7.3` - 協程支持
+
+### 測試依賴（Test）
+
+- **JUnit** `4.13.2` - 單元測試框架
+- **AndroidX Test Ext JUnit** `1.1.5` - Android JUnit 擴展
+- **Espresso Core** `3.5.1` - UI 自動化測試框架
+
+### 注意事項
+
+- **DocumentFile**：代碼中使用了 `androidx.documentfile.provider.DocumentFile`，但可能通過其他依賴傳遞引入，或需要手動添加 `androidx.documentfile:documentfile:1.0.1` 依賴
 
 ## 開發環境要求
 
-- Android Studio Hedgehog 或更新版本
-- **JDK 17**（AGP 8.2.x 建議/常用需求；Android Studio 內建 JBR 也可）
-- Android SDK Platform 34
+### 必需環境
+
+- **Android Studio**: Hedgehog (2023.1.1) 或更新版本
+- **JDK**: 17 或更高版本（AGP 8.2.0 要求；Android Studio 內建的 JBR 17 也可使用）
+- **Android SDK**: 
+  - Platform 34 (Android 14)
+  - Build Tools 34.0.0 或更新
+  - Android SDK Command-line Tools
+
+### 建議配置
+
+- **記憶體**: 至少 8 GB RAM（建議 16 GB）
+- **硬碟空間**: 至少 10 GB 可用空間（用於 SDK、模擬器等）
+- **網路連線**: 首次構建需要下載依賴（約 500 MB - 1 GB）
+
+### Gradle 配置
+
+- **Gradle JVM 參數**: `-Xmx2048m -Dfile.encoding=UTF-8`（在 `gradle.properties` 中配置）
+- **AndroidX**: 已啟用（`android.useAndroidX=true`）
+- **非傳遞 R 類**: 已啟用（`android.nonTransitiveRClass=true`）
 
 ## 快速開始（建議）
 
@@ -133,18 +186,18 @@ lrcapp/
 
 ## 使用流程
 
-1. 啟動應用，進入主界面
-2.（可能出現）依 Android 版本要求授予讀取/存取權限  
-   - Android 11+：可能會引導到系統頁面授予「所有檔案存取權」
-   - Android 7~10：可能會跳出讀取外部儲存權限請求
-3.（可選）點擊「選擇目錄」設定輸出資料夾（SAF），未設定則使用預設下載目錄
+1. 啟動應用，進入主界面（標題顯示「LRC 字幕轉換器」）
+2. （可能出現）依 Android 版本要求授予讀取/存取權限  
+   - Android 11+：可能會引導到系統頁面授予「所有檔案存取權」（`MANAGE_EXTERNAL_STORAGE`）
+   - Android 7~10：可能會跳出讀取外部儲存權限請求（`READ_EXTERNAL_STORAGE`）
+3. （可選）點擊「選擇目錄」設定輸出資料夾（使用 SAF `OpenDocumentTree`），未設定則使用預設下載目錄
 4. 點擊「選擇文件」，調出系統文件選擇器並一次選取多個字幕檔
-5. 選取完成後，App 會先做前置校驗：不支援格式或超過 10MB 會直接標記「錯誤」
-6.（可選）切換「智能命名清理」或「時間精度優化」開關
-7. 點擊「開始轉換」，列表狀態會依序顯示「處理中 / 成功 / 錯誤」，並顯示進度百分比
-8. 轉換成功後：
-   - 單檔：點擊該列的「下載」
-   - 批次：點擊「打包下載」（ZIP）或「直接下載」（逐檔寫入）
+5. 選取完成後，App 會先做前置校驗：不支援格式或超過 10MB 會直接標記「錯誤」狀態
+   - **注意**：選擇新文件時會**清空舊列表**，替換為新選擇的文件
+6. 點擊「開始轉換」，列表狀態會依序顯示「處理中 / 成功 / 錯誤」，並顯示進度百分比
+7. 轉換完成後，**所有成功轉換的文件會自動保存**到指定的輸出目錄
+   - 顯示 Toast 提示：「轉換完成！成功: X / Y」
+   - 顯示 Toast 提示：「已保存 X 個文件」
 
 ## 構建專案
 
@@ -181,8 +234,11 @@ lrcapp/
 - 輸出格式：LRC（UTF-8 編碼）
 - 文件保存位置：預設寫入 App 外部檔案下載目錄；或由使用者在 App 內選擇輸出資料夾後寫入
 
-## 已知限制（與目前程式一致）
+## 已知限制與設計決策
 
 - **選擇器副檔名過濾**：目前未在系統選擇器中限制可見檔案，會在選取後才做副檔名驗證。
-- **Android 11+ 權限策略**：目前採用「所有檔案存取權」的方式簡化流程；若要更貼近 Scoped Storage 最佳實務，可再改為完全依賴 SAF + MediaStore。
+- **Android 11+ 權限策略**：目前採用「所有檔案存取權」（`MANAGE_EXTERNAL_STORAGE`）的方式簡化流程；若要更貼近 Scoped Storage 最佳實務，可再改為完全依賴 SAF + MediaStore。
 - **字幕解析覆蓋範圍**：轉換器以常見格式規則實作，對於某些複雜情況（例如 VTT 多行 cue、ASS 逗號分隔更複雜的 Dialogue 欄位）可能需要進一步強化。
+- **設置選項**：目前「智能命名清理」和「時間精度優化」在代碼中硬編碼為 `true`，沒有 UI 開關可調整（但轉換引擎仍會根據這些設置工作）。
+- **文件導出方式**：轉換完成後會自動保存所有成功轉換的文件，不提供單個下載或 ZIP 打包選項（簡化用戶操作流程）。
+- **文件列表管理**：選擇新文件時會清空舊列表，不支援追加文件到現有列表。
