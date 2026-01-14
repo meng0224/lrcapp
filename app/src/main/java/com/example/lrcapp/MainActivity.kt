@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Button
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,7 +27,9 @@ import com.example.lrcapp.util.FileValidator
 import com.example.lrcapp.util.SettingsManager
 import com.example.lrcapp.util.StorageHelper
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,12 +37,13 @@ import kotlinx.coroutines.withContext
 class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: SubtitleFileAdapter
-    private lateinit var progressBar: ProgressBar
+    private lateinit var progressBar: LinearProgressIndicator
     private lateinit var tvProgress: TextView
     private lateinit var btnSelectFiles: MaterialButton
     private lateinit var btnConvert: MaterialButton
     private lateinit var tvOutputDir: TextView
     private lateinit var btnSelectOutputDir: Button
+    private lateinit var toolbar: MaterialToolbar
 
     private val files = mutableListOf<SubtitleFile>()
     private var settings = AppSettings()
@@ -101,6 +103,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
         recyclerView = findViewById(R.id.recyclerView)
         progressBar = findViewById(R.id.progressBar)
         tvProgress = findViewById(R.id.tvProgress)

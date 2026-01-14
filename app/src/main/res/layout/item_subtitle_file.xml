@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardCornerRadius="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,17 +25,19 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="文件名"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1" />
 
             <TextView
                 android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="待處理"
-                android:textSize="14sp"
-                android:padding="4dp"
-                android:backgroundTint="#FFA500" />
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:background="@drawable/status_background_pending" />
         </LinearLayout>
 
         <TextView
@@ -44,7 +45,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="輸出: "
-            android:textSize="14sp"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="?android:attr/textColorSecondary"
             android:layout_marginTop="4dp"
             android:visibility="gone" />
 
@@ -53,8 +55,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="錯誤信息"
-            android:textSize="14sp"
-            android:textColor="#FF0000"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="?attr/colorError"
             android:layout_marginTop="4dp"
             android:visibility="gone" />
 
