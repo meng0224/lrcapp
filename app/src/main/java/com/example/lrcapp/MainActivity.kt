@@ -8,18 +8,17 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.lrcapp.adapter.SubtitleFileAdapter
 import com.example.lrcapp.converter.SubtitleConverter
+import com.example.lrcapp.databinding.ActivityMainBinding
 import com.example.lrcapp.model.AppSettings
 import com.example.lrcapp.model.FileStatus
 import com.example.lrcapp.model.SubtitleFile
@@ -27,27 +26,13 @@ import com.example.lrcapp.util.FileNameHelper
 import com.example.lrcapp.util.FileValidator
 import com.example.lrcapp.util.SettingsManager
 import com.example.lrcapp.util.StorageHelper
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.switchmaterial.SwitchMaterial
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: SubtitleFileAdapter
-    private lateinit var progressBar: ProgressBar
-    private lateinit var tvProgress: TextView
-    private lateinit var btnSelectFiles: MaterialButton
-    private lateinit var btnConvert: MaterialButton
-    private lateinit var btnDownloadZip: MaterialButton
-    private lateinit var btnDownloadAll: MaterialButton
-    private lateinit var switchSmartNaming: SwitchMaterial
-    private lateinit var switchTimePrecision: SwitchMaterial
-    private lateinit var exportButtonsLayout: android.widget.LinearLayout
-    private lateinit var tvOutputDir: TextView
-    private lateinit var btnSelectOutputDir: Button
 
     private val files = mutableListOf<SubtitleFile>()
     private var settings = AppSettings()
@@ -97,62 +82,37 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        initViews()
         loadSettings()
         setupRecyclerView()
         setupClickListeners()
         checkAndRequestPermissions()
     }
 
-    private fun initViews() {
-        recyclerView = findViewById(R.id.recyclerView)
-        progressBar = findViewById(R.id.progressBar)
-        tvProgress = findViewById(R.id.tvProgress)
-        btnSelectFiles = findViewById(R.id.btnSelectFiles)
-        btnConvert = findViewById(R.id.btnConvert)
-        btnDownloadZip = findViewById(R.id.btnDownloadZip)
-        btnDownloadAll = findViewById(R.id.btnDownloadAll)
-        switchSmartNaming = findViewById(R.id.switchSmartNaming)
-        switchTimePrecision = findViewById(R.id.switchTimePrecision)
-        exportButtonsLayout = findViewById(R.id.exportButtonsLayout)
-        tvOutputDir = findViewById(R.id.tvOutputDir)
-        btnSelectOutputDir = findViewById(R.id.btnSelectOutputDir)
-    }
-
     private fun loadSettings() {
         settings = SettingsManager.loadSettings(this)
-        switchSmartNaming.isChecked = settings.smartNaming
-        switchTimePrecision.isChecked = settings.timePrecision
+        binding.switchSmartNaming.isChecked = settings.smartNaming
+        binding.switchTimePrecision.isChecked = settings.timePrecision
         updateOutputDirDisplay()
-
-        switchSmartNaming.setOnCheckedChangeListener { _, isChecked ->
-            settings.smartNaming = isChecked
-            SettingsManager.saveSettings(this, settings)
-        }
-
-        switchTimePrecision.setOnCheckedChangeListener { _, isChecked ->
-            settings.timePrecision = isChecked
-            SettingsManager.saveSettings(this, settings)
-        }
     }
 
     private fun setupRecyclerView() {
         adapter = SubtitleFileAdapter(files) { file ->
             downloadSingleFile(file)
         }
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.adapter = adapter
     }
 
     private fun setupClickListeners() {
-        btnSelectFiles.setOnClickListener {
+        binding.btnSelectFiles.setOnClickListener {
             openPickerOnPermissionGrant = true
             checkAndRequestPermissions()
         }
 
-        btnConvert.setOnClickListener {
+        binding.btnConvert.setOnClickListener {
             if (files.isEmpty()) {
                 Toast.makeText(this, "請先選擇文件", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -160,16 +120,26 @@ class MainActivity : AppCompatActivity() {
             startConversion()
         }
 
-        btnDownloadZip.setOnClickListener {
+        binding.btnDownloadZip.setOnClickListener {
             downloadAsZip()
         }
 
-        btnDownloadAll.setOnClickListener {
+        binding.btnDownloadAll.setOnClickListener {
             downloadAllFiles()
         }
 
-        btnSelectOutputDir.setOnClickListener {
+        binding.btnSelectOutputDir.setOnClickListener {
             directoryPickerLauncher.launch(null)
+        }
+
+        binding.switchSmartNaming.setOnCheckedChangeListener { _, isChecked ->
+            settings.smartNaming = isChecked
+            SettingsManager.saveSettings(this, settings)
+        }
+
+        binding.switchTimePrecision.setOnCheckedChangeListener { _, isChecked ->
+            settings.timePrecision = isChecked
+            SettingsManager.saveSettings(this, settings)
         }
     }
 
@@ -209,26 +179,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleSelectedFiles(uris: List<Uri>) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val newFiles = mutableListOf<SubtitleFile>()
-
-            for (uri in uris) {
+            val newFiles = uris.mapNotNull { uri ->
                 try {
                     val fileName = getFileName(uri)
                     val fileSize = getFileSize(uri)
-
                     val (isValid, errorMessage) = FileValidator.validateFile(fileName, fileSize)
-
-                    val subtitleFile = SubtitleFile(
+                    SubtitleFile(
                         uri = uri,
                         fileName = fileName,
                         fileSize = fileSize,
                         status = if (isValid) FileStatus.PENDING else FileStatus.ERROR,
                         errorMessage = errorMessage
                     )
-
-                    newFiles.add(subtitleFile)
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    null
                 }
             }
 
@@ -245,42 +210,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getFileName(uri: Uri): String {
-        var fileName = ""
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                if (nameIndex >= 0) {
-                    fileName = cursor.getString(nameIndex)
-                }
-            }
-        }
-        return fileName.ifEmpty { "未知文件" }
+        return DocumentFile.fromSingleUri(this, uri)?.name ?: "未知文件"
     }
 
     private fun getFileSize(uri: Uri): Long {
-        var fileSize = 0L
-        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
-                if (sizeIndex >= 0) {
-                    fileSize = cursor.getLong(sizeIndex)
-                }
-            }
-        }
-        return fileSize
+        return DocumentFile.fromSingleUri(this, uri)?.length() ?: 0L
     }
 
     private fun startConversion() {
         settings = SettingsManager.loadSettings(this)
-        progressBar.progress = 0
-        progressBar.visibility = android.view.View.VISIBLE
-        tvProgress.visibility = android.view.View.VISIBLE
-        exportButtonsLayout.visibility = android.view.View.GONE
+        binding.progressBar.progress = 0
+        binding.progressBar.visibility = View.VISIBLE
+        binding.tvProgress.visibility = View.VISIBLE
+        binding.exportButtonsLayout.visibility = View.GONE
         val filesToProcess = files.filter { it.status == FileStatus.PENDING || it.status == FileStatus.ERROR }
         if (filesToProcess.isEmpty()) {
             Toast.makeText(this, "沒有需要轉換的文件", Toast.LENGTH_SHORT).show()
-            progressBar.visibility = android.view.View.GONE
-            tvProgress.visibility = android.view.View.GONE
+            binding.progressBar.visibility = View.GONE
+            binding.tvProgress.visibility = View.GONE
             return
         }
 
@@ -288,9 +235,9 @@ class MainActivity : AppCompatActivity() {
             val converter = SubtitleConverter(this@MainActivity, settings)
             var processedCount = 0
 
-            for (file in filesToProcess) {
+            filesToProcess.forEach { file ->
                 val fileIndex = files.indexOf(file)
-                if (fileIndex < 0) continue
+                if (fileIndex < 0) return@forEach
                 withContext(Dispatchers.Main) {
                     files[fileIndex].status = FileStatus.PROCESSING
                     adapter.updateFile(fileIndex, files[fileIndex])
@@ -320,16 +267,16 @@ class MainActivity : AppCompatActivity() {
                 processedCount++
                 val progress = (processedCount * 100) / filesToProcess.size
                 withContext(Dispatchers.Main) {
-                    progressBar.progress = progress
-                    tvProgress.text = "進度: $progress%"
+                    binding.progressBar.progress = progress
+                    binding.tvProgress.text = "進度: $progress%"
                 }
             }
             withContext(Dispatchers.Main) {
-                progressBar.visibility = android.view.View.GONE
-                tvProgress.visibility = android.view.View.GONE
+                binding.progressBar.visibility = View.GONE
+                binding.tvProgress.visibility = View.GONE
                 val successCount = files.count { it.status == FileStatus.SUCCESS }
                 if (successCount > 0) {
-                    exportButtonsLayout.visibility = android.view.View.VISIBLE
+                    binding.exportButtonsLayout.visibility = View.VISIBLE
                 }
                 Toast.makeText(this@MainActivity, "轉換完成！成功: $successCount / ${filesToProcess.size}", Toast.LENGTH_SHORT).show()
             }
@@ -395,9 +342,9 @@ class MainActivity : AppCompatActivity() {
         if (uriString != null) {
             val uri = Uri.parse(uriString)
             val docFile = DocumentFile.fromTreeUri(this, uri)
-            tvOutputDir.text = "儲存位置: ${docFile?.name}"
+            binding.tvOutputDir.text = "儲存位置: ${docFile?.name}"
         } else {
-            tvOutputDir.text = "儲存位置: 預設下載目錄"
+            binding.tvOutputDir.text = "儲存位置: 預設下載目錄"
         }
     }
 }
