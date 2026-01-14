@@ -58,22 +58,6 @@
             android:layout_marginTop="4dp"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp"
-            android:gravity="end">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDownload"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="下載"
-                android:textSize="14sp"
-                android:visibility="gone" />
-        </LinearLayout>
-
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

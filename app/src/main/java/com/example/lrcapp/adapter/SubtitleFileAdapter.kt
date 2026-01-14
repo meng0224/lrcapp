@@ -9,12 +9,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.lrcapp.R
 import com.example.lrcapp.model.FileStatus
 import com.example.lrcapp.model.SubtitleFile
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 
 class SubtitleFileAdapter(
-    private val files: MutableList<SubtitleFile>,
-    private val onDownloadClick: (SubtitleFile) -> Unit
+    private val files: MutableList<SubtitleFile>
 ) : RecyclerView.Adapter<SubtitleFileAdapter.ViewHolder>() {
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -23,7 +21,6 @@ class SubtitleFileAdapter(
         val tvStatus: TextView = itemView.findViewById(R.id.tvStatus)
         val tvOutputFileName: TextView = itemView.findViewById(R.id.tvOutputFileName)
         val tvErrorMessage: TextView = itemView.findViewById(R.id.tvErrorMessage)
-        val btnDownload: MaterialButton = itemView.findViewById(R.id.btnDownload)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -48,7 +45,6 @@ class SubtitleFileAdapter(
                 )
                 holder.tvOutputFileName.visibility = View.GONE
                 holder.tvErrorMessage.visibility = View.GONE
-                holder.btnDownload.visibility = View.GONE
             }
             FileStatus.PROCESSING -> {
                 holder.tvStatus.text = "處理中"
@@ -60,7 +56,6 @@ class SubtitleFileAdapter(
                 )
                 holder.tvOutputFileName.visibility = View.GONE
                 holder.tvErrorMessage.visibility = View.GONE
-                holder.btnDownload.visibility = View.GONE
             }
             FileStatus.SUCCESS -> {
                 holder.tvStatus.text = "成功"
@@ -75,8 +70,6 @@ class SubtitleFileAdapter(
                     holder.tvOutputFileName.visibility = View.VISIBLE
                 }
                 holder.tvErrorMessage.visibility = View.GONE
-                holder.btnDownload.visibility = View.VISIBLE
-                holder.btnDownload.setOnClickListener { onDownloadClick(file) }
             }
             FileStatus.ERROR -> {
                 holder.tvStatus.text = "錯誤"
@@ -91,7 +84,6 @@ class SubtitleFileAdapter(
                     holder.tvErrorMessage.text = file.errorMessage
                     holder.tvErrorMessage.visibility = View.VISIBLE
                 }
-                holder.btnDownload.visibility = View.GONE
             }
         }
     }
