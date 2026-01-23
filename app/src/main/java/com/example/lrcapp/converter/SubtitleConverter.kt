@@ -59,14 +59,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
         var i = 0
         while (i < lines.size) {
             val line = lines[i].trim()
-            
-            // 跳過 WEBVTT 標題和空行
-            if (line.startsWith("WEBVTT") || line.isEmpty() || line.startsWith("NOTE")) {
-                i++
-                continue
-            }
-            
-            // 檢查是否為時間軸
+
             if (line.contains("-->")) {
                 val timeMatch = timePattern.matcher(line)
                 if (timeMatch.find()) {
@@ -77,13 +70,19 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
                         timeMatch.group(4).toInt()  // 毫秒
                     )
                     
-                    // 讀取下一行作為文本內容
-                    if (i + 1 < lines.size) {
-                        val text = cleanText(lines[i + 1])
-                        if (text.isNotEmpty()) {
-                            lrcLines.add("[$startTime]$text")
-                        }
+                    // 讀取後續文本行，直到遇到空行
+                    val textLines = mutableListOf<String>()
+                    i++
+                    while (i < lines.size && lines[i].trim().isNotEmpty()) {
+                        textLines.add(lines[i].trim())
+                        i++
                     }
+                    
+                    val text = cleanText(textLines.joinToString(" "))
+                    if (text.isNotEmpty()) {
+                        lrcLines.add("[$startTime]$text")
+                    }
+                    continue // 繼續外層循環
                 }
             }
             i++
@@ -106,13 +105,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
         while (i < lines.size) {
             val line = lines[i].trim()
             
-            // 跳過序號行和空行
-            if (line.isEmpty() || line.matches(Regex("^\\d+$"))) {
-                i++
-                continue
-            }
-            
-            // 檢查是否為時間軸
+            // 只尋找時間軸
             if (line.contains("-->")) {
                 val timeMatch = timePattern.matcher(line)
                 if (timeMatch.find()) {
@@ -123,10 +116,10 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
                         timeMatch.group(4).toInt()
                     )
                     
-                    // 讀取後續文本行
+                    // 讀取後續文本行，直到遇到空行
                     val textLines = mutableListOf<String>()
                     i++
-                    while (i < lines.size && lines[i].trim().isNotEmpty() && !lines[i].contains("-->")) {
+                    while (i < lines.size && lines[i].trim().isNotEmpty()) {
                         textLines.add(lines[i].trim())
                         i++
                     }
@@ -135,7 +128,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
                     if (text.isNotEmpty()) {
                         lrcLines.add("[$startTime]$text")
                     }
-                    continue
+                    continue // 繼續外層循環
                 }
             }
             i++
