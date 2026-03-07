@@ -19,7 +19,7 @@
   - 一般 compound name 不被誤傷
 - `SubtitleConverterTest`
   - ASS/SSA 逗號保留
-  - ASS/SSA 樣式碼與 `\\N` 清理
+  - ASS/SSA 樣式碼與 `\N` 清理
   - SRT 基本轉換
   - VTT 多行合併
   - SMI 基本轉換
@@ -30,6 +30,20 @@
   - 既有 document 重用
   - 缺少 document 時建立新檔
   - 成功統計只計算非 `null` 結果
+  - 多目標輸出成功統計
+- `SettingsManagerTest`
+  - `outputToSourceDirectory` 讀值
+  - source directory preference key 編碼
+- `OutputSettingsPolicyTest`
+  - 自訂輸出目錄與原文件目錄模式互斥
+- `FileSelectionPolicyTest`
+  - 原文件目錄模式多次選檔追加
+  - 同 `Uri` 去重
+  - 一般模式覆蓋舊列表
+  - 同檔名不同 `Uri` 可共存
+- `FileListUiPolicyTest`
+  - 空列表時禁用「清除文件列表」按鈕
+  - 有列表時啟用「清除文件列表」按鈕
 
 ### Instrumentation tests already added
 
@@ -77,12 +91,17 @@
 - `StorageHelper`
   - 非 SAF 路徑的保存成功數
   - ZIP 輸出的成功與失敗回報
+- `MainActivity` related logic
+  - 清除文件列表後的進度狀態重置
+  - 原文件目錄模式下來源目錄授權失敗後再清除列表的行為
 
 ### Instrumentation next target
 
 1. `MainActivity` 冷啟動不跳額外權限流程
 2. SAF 目錄選取後 UI 文案更新
-3. 成功轉換後寫出一個檔案到 SAF 目錄
+3. 原文件目錄模式下多次選檔追加與去重
+4. 成功轉換後寫出一個檔案到 SAF 目錄
+5. 清除文件列表後畫面回到乾淨狀態
 
 ## 5. Notes
 

@@ -20,6 +20,7 @@
 - 共通回歸
   - 無效檔案維持 `INVALID`
   - 同名輸出不先刪舊檔
+  - 不影響既有 SAF 匯入與輸出流程
 
 ## 2. Environment
 
@@ -76,6 +77,7 @@
 - [ ] File larger than `10MB` becomes `無效`
 - [ ] ASS/SSA text with commas remains intact
 - [ ] SRT/VTT multiline text merges correctly
+- [ ] 新增原文件目錄與清除文件列表功能後，不影響原本 SAF 權限與輸出流程
 
 ## 5. Results
 
