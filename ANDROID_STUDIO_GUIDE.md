@@ -1,494 +1,329 @@
-# Android Studio 安裝與使用教學
+# Android Studio 開發與執行手冊
 
-本教學將指導您如何安裝 Android Studio 並使用它來開發和運行 LrcApp 專案。
+本文件說明如何在 Android Studio 中開啟、執行、驗證與排查 LrcApp。它是本專案的 Android Studio 專用手冊，不是通用 IDE 百科。
 
-## 目錄
+相關文件：
+- 產品入口與最小建置命令：[README.md](./README.md)
+- 開發狀態與下一步：[DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
+- Android 版本差異驗證：[PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md)
+- 測試資產與阻塞：[PHASE3_TEST_HARDENING.md](./PHASE3_TEST_HARDENING.md)
 
-1. [系統需求](#系統需求)
-2. [下載 Android Studio](#下載-android-studio)
-3. [安裝步驟](#安裝步驟)
-4. [首次設置](#首次設置)
-5. [打開專案](#打開專案)
-6. [Gradle 同步](#gradle-同步)
-7. [運行應用](#運行應用)
-8. [基本操作](#基本操作)
-9. [常見問題](#常見問題)
+## 適用對象
 
----
+這份文件同時寫給兩種人：
+- Android 新手：需要從安裝 Android Studio、建立模擬器開始
+- 本專案新進維護者：想快速把 `LrcApp` 跑起來、看 Logcat、驗證功能與定位問題
 
-## 系統需求
+## 快速開始
 
-### Windows 系統
-- **作業系統**: Windows 10 (64-bit) 或更高版本
-- **記憶體**: 至少 8 GB RAM（建議 16 GB）
-- **硬碟空間**: 至少 8 GB 可用空間（建議 16 GB）
-- **螢幕解析度**: 最低 1280 x 800
+如果你只想用最短路徑把專案跑起來，照下面做：
 
-### macOS 系統
-- **作業系統**: macOS 10.15 (Catalina) 或更高版本
-- **記憶體**: 至少 8 GB RAM（建議 16 GB）
-- **硬碟空間**: 至少 8 GB 可用空間（建議 16 GB）
+1. 安裝 Android Studio。
+2. 用 Android Studio 開啟專案根目錄 `D:\Git\lrcapp`。
+3. 確認已安裝 Android SDK Platform 34 與 Build Tools。
+4. 等待 Gradle Sync 完成。
+5. 選擇模擬器或實機。
+6. 點擊工具列的 `Run` 執行 `app`。
 
-### Linux 系統
-- **作業系統**: 任何 64-bit Linux 發行版
-- **記憶體**: 至少 8 GB RAM（建議 16 GB）
-- **硬碟空間**: 至少 8 GB 可用空間（建議 16 GB）
+如果你卡在任何一步，往下看對應章節。
 
----
+## 1. 安裝 Android Studio 與必要元件
 
-## 下載 Android Studio
+### Android Studio
 
-1. 訪問官方網站：https://developer.android.com/studio
-2. 點擊「下載 Android Studio」按鈕
-3. 閱讀並接受條款
-4. 選擇適合您作業系統的版本下載
-   - Windows: `.exe` 安裝檔
-   - macOS: `.dmg` 映像檔
-   - Linux: `.tar.gz` 壓縮檔
+請到官方網站下載並安裝 Android Studio：
+- https://developer.android.com/studio
 
----
+建議版本：
+- Hedgehog (2023.1.1) 或更新版本
 
-## 安裝步驟
+### 本專案需要的 SDK
 
-### Windows 安裝
+開啟 Android Studio 後，請確認至少安裝：
+- Android SDK Platform 34
+- Android SDK Build-Tools 34.x
+- Android SDK Platform-Tools
+- Android Emulator
 
-1. **執行安裝檔**
-   - 雙擊下載的 `.exe` 檔案
-   - 如果出現使用者帳戶控制提示，點擊「是」
+檢查方式：
+1. 開啟 Android Studio。
+2. 進入 `File > Settings > Android SDK`。
+3. 確認 `SDK Platforms` 和 `SDK Tools` 內上述元件已安裝。
 
-2. **安裝精靈**
-   - 點擊「Next」開始安裝
-   - 選擇安裝元件（建議全部勾選）：
-     - Android Studio
-     - Android SDK
-     - Android Virtual Device
-     - Performance (Intel HAXM)
-   - 選擇安裝路徑（預設即可）
-   - 點擊「Next」繼續
+## 2. 開啟專案
 
-3. **完成安裝**
-   - 等待安裝完成
-   - 勾選「Start Android Studio」後點擊「Finish」
+1. 啟動 Android Studio。
+2. 選擇 `Open`。
+3. 指向專案根目錄：`D:\Git\lrcapp`。
+4. 確認你選的是包含 `settings.gradle` 的那一層目錄。
 
-### macOS 安裝
+開啟後，Android Studio 會自動開始 Gradle Sync。
 
-1. **掛載映像檔**
-   - 雙擊下載的 `.dmg` 檔案
-   - 將 Android Studio 拖曳到 Applications 資料夾
+## 3. Gradle Sync
 
-2. **首次啟動**
-   - 打開 Applications 資料夾
-   - 雙擊 Android Studio 圖示
-   - 如果出現安全警告，前往「系統偏好設定」>「安全性與隱私權」允許執行
+### 正常情況
 
-### Linux 安裝
+打開專案後，底部會顯示 Gradle Sync 狀態。第一次同步可能需要幾分鐘。
 
-1. **解壓縮**
-   ```bash
-   cd /opt
-   sudo tar -xzf ~/Downloads/android-studio-*.tar.gz
-   ```
+### 這個專案目前已知的限制
 
-2. **執行安裝腳本**
-   ```bash
-   cd android-studio/bin
-   ./studio.sh
-   ```
+本專案目前的 Gradle wrapper 版本會嘗試下載：
+- `gradle-9.0-milestone-1-bin.zip`
 
----
+如果你的環境無法連外，Gradle Sync、建置或測試都可能失敗。這不是產品程式碼邏輯錯誤，而是開發環境阻塞。
 
-## 首次設置
+### 如果 Sync 失敗，先檢查
 
-### 1. 歡迎畫面設置
+1. 網路是否可下載 Gradle 發行版。
+2. Android SDK 是否完整。
+3. Android Studio 使用的 JDK 是否為 17 或內建 JBR。
+4. `Build` 視窗或 `Sync` 訊息中是否明確指出缺少哪個元件。
 
-首次啟動 Android Studio 時，會出現設置精靈：
+## 4. 準備裝置
 
-1. **選擇設置類型**
-   - 選擇「Standard」（標準設置）或「Custom」（自訂設置）
-   - 建議選擇「Standard」以使用預設配置
+你可以用實機或模擬器。
 
-2. **選擇 UI 主題**
-   - Light（淺色主題）
-   - Darcula（深色主題）
-   - 選擇您偏好的主題
+### 方法 A：實機
 
-3. **下載 SDK 元件**
-   - Android Studio 會自動下載必要的 SDK 元件
-   - 這可能需要一些時間，請耐心等待
-   - 確保網路連線穩定
+1. 在手機啟用開發者選項。
+2. 開啟 `USB 偵錯`。
+3. 用 USB 連接電腦。
+4. 在手機上允許偵錯授權。
+5. 回到 Android Studio，確認裝置出現在裝置選擇器中。
 
-4. **驗證設置**
-   - 檢查 SDK 路徑（通常為 `C:\Users\您的用戶名\AppData\Local\Android\Sdk`）
-   - 確認已安裝的 SDK 版本
+### 方法 B：模擬器
 
-### 2. 安裝 Android SDK
+1. 開啟 `Device Manager`。
+2. 建立一台 Android 14 / API 34 模擬器。
+3. 啟動模擬器。
+4. 等待系統進入桌面後再執行 app。
 
-1. 打開「SDK Manager」
-   - 點擊工具列「More Actions」>「SDK Manager」
-   - 或「File」>「Settings」>「Appearance & Behavior」>「System Settings」>「Android SDK」
+## 5. 執行 LrcApp
 
-2. **選擇 SDK 版本**
-   - 勾選「Android 14.0 (API 34)」（LrcApp 專案所需）
-   - 勾選「Android SDK Build-Tools」
-   - 勾選「Android SDK Platform-Tools」
-   - 勾選「Android Emulator」
+### Android Studio 內執行
 
-3. **套用更改**
-   - 點擊「Apply」開始下載
-   - 等待下載完成
+1. 確認上方 Run Configuration 是 `app`。
+2. 選擇裝置。
+3. 點擊 `Run`。
 
----
+### 命令列執行
 
-## 打開專案
+Windows:
 
-### 方法一：從歡迎畫面打開
-
-1. **啟動 Android Studio**
-   - 如果已打開專案，點擊「File」>「Close Project」返回歡迎畫面
-
-2. **打開專案**
-   - 點擊「Open」或「Open an Existing Project」
-   - 瀏覽到 LrcApp 專案資料夾（`D:\Git\lrcapp`）
-   - 選擇專案根目錄（包含 `build.gradle` 和 `settings.gradle` 的資料夾）
-   - 點擊「OK」
-
-### 方法二：從檔案總管打開
-
-1. **直接打開**
-   - 在檔案總管中，找到 LrcApp 專案資料夾
-   - 右鍵點擊專案資料夾
-   - 選擇「Open with Android Studio」（如果已設定）
-
----
-
-## Gradle 同步
-
-打開專案後，Android Studio 會自動開始 Gradle 同步：
-
-### 自動同步
-
-1. **等待同步完成**
-   - 查看底部狀態列，會顯示「Gradle sync in progress...」
-   - 首次同步可能需要較長時間（5-10 分鐘）
-
-2. **同步成功**
-   - 狀態列顯示「Gradle sync completed」
-   - 如果出現錯誤，請參考[常見問題](#常見問題)章節
-
-### 手動同步
-
-如果自動同步失敗，可以手動觸發：
-
-1. **使用工具列**
-   - 點擊工具列上的「Sync Project with Gradle Files」圖示（🔄）
-
-2. **使用選單**
-   - 點擊「File」>「Sync Project with Gradle Files」
-
-3. **使用快捷鍵**
-   - Windows/Linux: `Ctrl + Shift + O`
-   - macOS: `Cmd + Shift + O`
-
----
-
-## 運行應用
-
-### 準備設備
-
-您需要一個 Android 設備或模擬器來運行應用：
-
-#### 選項一：使用實體設備
-
-1. **啟用開發者選項**
-   - 前往「設定」>「關於手機」
-   - 連續點擊「版本號碼」7 次
-   - 返回「設定」，找到「開發者選項」
-
-2. **啟用 USB 偵錯**
-   - 進入「開發者選項」
-   - 開啟「USB 偵錯」
-   - 使用 USB 線連接手機到電腦
-
-3. **授權電腦**
-   - 手機上會出現「允許 USB 偵錯？」提示
-   - 勾選「一律允許這部電腦」後點擊「確定」
-
-4. **驗證連接**
-   - 在 Android Studio 中，點擊工具列的設備選擇器
-   - 應該能看到您的設備名稱
-
-#### 選項二：使用 Android 模擬器
-
-1. **創建模擬器**
-   - 點擊工具列「More Actions」>「Virtual Device Manager」
-   - 或「Tools」>「Device Manager」
-
-2. **創建設備**
-   - 點擊「Create Device」
-   - 選擇設備類型（建議選擇「Pixel 5」或「Pixel 6」）
-   - 點擊「Next」
-
-3. **選擇系統映像**
-   - 選擇「API 34」（Android 14）
-   - 如果未下載，點擊「Download」下載
-   - 點擊「Next」
-
-4. **完成設置**
-   - 確認設備配置
-   - 點擊「Finish」
-
-5. **啟動模擬器**
-   - 在 Device Manager 中，點擊設備旁的「Play」按鈕
-   - 等待模擬器啟動（首次啟動可能需要幾分鐘）
-
-### 運行應用
-
-1. **選擇運行配置**
-   - 確認工具列的設備選擇器顯示正確的設備
-   - 確認運行配置為「app」
-
-2. **運行應用**
-   - 點擊工具列的「Run」按鈕（綠色播放圖示 ▶）
-   - 或使用快捷鍵：
-     - Windows/Linux: `Shift + F10`
-     - macOS: `Ctrl + R`
-
-3. **等待構建**
-   - Android Studio 會先編譯專案
-   - 構建完成後，應用會自動安裝到設備並啟動
-
-4. **查看日誌**
-   - 底部「Logcat」視窗會顯示應用日誌
-   - 如果有錯誤，會以紅色顯示
-
-### LrcApp 權限與儲存說明
-
-- Android 11+：LrcApp 透過系統文件選擇器與 SAF 存取檔案，不需要授予「所有檔案存取權」
-- Android 7~10：第一次選檔時可能會要求 `READ_EXTERNAL_STORAGE`
-- 未選擇自訂輸出資料夾時，轉換結果會保存到 App-specific downloads
-- 使用「選擇目錄」後，輸出會寫入使用者授權的 SAF 目錄
-
----
-
-## 基本操作
-
-### 專案結構
-
-在左側「Project」視窗中，您可以查看專案結構：
-
-```
-app/
-├── manifests/          # AndroidManifest.xml
-├── java/              # Kotlin/Java 源代碼
-│   └── com/example/lrcapp/
-├── res/               # 資源文件
-│   ├── layout/        # 布局文件
-│   ├── values/        # 字串、顏色等
-│   └── ...
-└── build.gradle       # 模組級構建配置
+```bash
+.\gradlew.bat build
+.\gradlew.bat installDebug
 ```
 
-### 編輯代碼
+macOS / Linux:
 
-1. **打開文件**
-   - 在 Project 視窗中雙擊文件即可打開
-   - 使用 `Ctrl + P`（macOS: `Cmd + P`）快速搜尋文件
+```bash
+./gradlew build
+./gradlew installDebug
+```
 
-2. **代碼補全**
-   - 輸入時會自動顯示建議
-   - 使用 `Ctrl + Space` 手動觸發補全
+## 6. 本專案執行重點
 
-3. **格式化代碼**
-   - 右鍵點擊 >「Reformat Code」
-   - 或使用快捷鍵：`Ctrl + Alt + L`（macOS: `Cmd + Option + L`）
+這一段不是 Android 通用知識，而是 LrcApp 的實際行為。
 
-### 調試應用
+### 權限與平台差異
 
-1. **設置斷點**
-   - 在代碼行號左側點擊，設置紅色斷點
+- Android 7~10：第一次選檔可能要求 `READ_EXTERNAL_STORAGE`
+- Android 11+：檔案匯入與輸出依賴 SAF，不要求 `MANAGE_EXTERNAL_STORAGE`
 
-2. **調試模式運行**
-   - 點擊工具列的「Debug」按鈕（蟲子圖示 🐛）
-   - 或使用快捷鍵：`Shift + F9`（macOS: `Ctrl + D`）
+### 輸出模式
 
-3. **查看變數**
-   - 在「Debug」視窗中查看變數值
-   - 滑鼠懸停在變數上可查看值
+#### 預設輸出
 
-### 構建 APK
+- 未選擇其他輸出方式時，輸出到 app-specific downloads
 
-1. **生成簽名 APK**
-   - 點擊「Build」>「Build Bundle(s) / APK(s)」>「Build APK(s)」
+#### 自訂輸出資料夾
 
-2. **查看輸出**
-   - 構建完成後，點擊通知中的「locate」
-   - APK 文件位於 `app/build/outputs/apk/debug/app-debug.apk`
+- 點 `選擇目錄`
+- 用 SAF 選一個授權目錄
+- 之後輸出寫到這個資料夾
 
----
+#### 原文件目錄
 
-## 常見問題
+- 開啟 `輸出到原文件目錄`
+- 第一次寫入某個來源資料夾時，會要求使用者授權該資料夾
+- 同一來源資料夾之後會重用已保存授權
+- 與自訂輸出資料夾互斥
 
-### 1. Gradle 同步失敗
+### 文件列表行為
 
-**問題**: Gradle sync 失敗，出現錯誤訊息
+- 一般模式：第二次選檔會覆蓋舊列表
+- 原文件目錄模式：第二次選檔會追加到現有列表
+- 重複檔案以 `Uri` 去重
+- `清除文件列表` 會清空目前列表，並重置相關暫存狀態
 
-**解決方案**:
-- 檢查網路連線（需要下載依賴）
-- 檢查 Gradle 版本是否正確
-- 嘗試「File」>「Invalidate Caches / Restart」>「Invalidate and Restart」
-- 刪除 `.gradle` 資料夾後重新同步
+## 7. 常見工作流程
 
-### 2. SDK 未找到
+### 修改程式碼後重新驗證
 
-**問題**: 提示找不到 Android SDK
+1. 修改 Kotlin 或 XML。
+2. 重新 `Run`。
+3. 觀察主畫面是否能正常進入。
+4. 依需求驗證：
+   - 一般模式選檔覆蓋
+   - 原文件目錄模式跨資料夾追加
+   - 自訂輸出資料夾
+   - 清除文件列表
 
-**解決方案**:
-1. 打開「File」>「Settings」>「Appearance & Behavior」>「System Settings」>「Android SDK」
-2. 檢查「Android SDK Location」路徑是否正確
-3. 如果路徑錯誤，點擊「Edit」修正
+### 驗證 SAF 輸出
 
-### 3. 模擬器啟動緩慢
+1. 啟動 app。
+2. 點 `選擇目錄`。
+3. 選一個 SAF 目錄。
+4. 選檔並開始轉換。
+5. 確認輸出寫入剛授權的目錄。
 
-**問題**: Android 模擬器啟動很慢
+### 驗證原文件目錄輸出
 
-**解決方案**:
-- 確保已啟用硬體加速（HAXM 或 HAXM 替代方案）
-- 增加模擬器的 RAM 分配
-- 使用較新的模擬器版本
+1. 開啟 `輸出到原文件目錄`。
+2. 先從 A 資料夾選一些檔案。
+3. 再去 B 資料夾選一些檔案。
+4. 確認列表保留 A+B。
+5. 開始轉換。
+6. 第一次寫入每個來源資料夾時，確認會要求授權對應目錄。
+7. 再次執行時，確認已授權目錄可被重用。
 
-### 4. 設備未識別
+### 驗證清除文件列表
 
-**問題**: 實體設備連接後無法識別
+1. 先選入一些檔案。
+2. 確認 `清除文件列表` 按鈕可點。
+3. 點擊後列表應清空。
+4. 若原本有原文件目錄模式的待處理狀態，也應一併清掉。
 
-**解決方案**:
-- 確認已啟用 USB 偵錯
-- 檢查 USB 驅動程式是否已安裝
-- 嘗試更換 USB 線或 USB 埠
-- 在命令列執行 `adb devices` 檢查設備是否出現
+## 8. 建置與測試
 
-### 5. 構建錯誤
+### Android Studio 內建流程
 
-**問題**: 構建時出現錯誤
+- Build: `Build > Make Project`
+- Rebuild: `Build > Rebuild Project`
+- Clean: `Build > Clean Project`
 
-**解決方案**:
-- 查看「Build」視窗中的錯誤訊息
-- 確認所有依賴都已正確下載
-- 嘗試「Build」>「Clean Project」，然後「Build」>「Rebuild Project」
+### 命令列測試
 
-### 6. 記憶體不足
+Windows:
 
-**問題**: Android Studio 運行緩慢或崩潰
+```bash
+set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
+set GRADLE_USER_HOME=D:\Git\lrcapp\.gradle-user
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat connectedDebugAndroidTest
+```
 
-**解決方案**:
-1. 增加 Android Studio 記憶體分配：
-   - 「Help」>「Edit Custom VM Options」
-   - 修改 `-Xmx` 參數（例如：`-Xmx4096m` 表示 4GB）
-2. 關閉不必要的視窗和工具
-3. 增加系統 RAM（如果可能）
+### 目前已知阻塞
 
-### 7. Kotlin 版本不匹配
+- 目前環境可能因無法下載 `gradle-9.0-milestone-1-bin.zip` 導致測試無法跑通
+- instrumentation 測試需要可用模擬器或實機
 
-**問題**: Kotlin 版本相關錯誤
+如果你要看詳細的測試資產與阻塞，請直接看：
+- [PHASE3_TEST_HARDENING.md](./PHASE3_TEST_HARDENING.md)
 
-**解決方案**:
-- 檢查 `build.gradle` 中的 Kotlin 版本
-- 確保專案級和模組級的 Kotlin 版本一致
-- 更新到最新穩定版本
+如果你要看裝置驗證清單，請看：
+- [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md)
 
----
+## 9. Logcat 與排錯
 
-## 快捷鍵參考
+### 看 Logcat
 
-### Windows/Linux
+1. 執行 app。
+2. 打開 Android Studio 底部的 `Logcat`。
+3. 過濾 `com.example.lrcapp`。
+4. 關注：
+   - `FATAL EXCEPTION`
+   - `Process: com.example.lrcapp`
+   - 第一段 exception 類型與 stack trace
 
-| 功能 | 快捷鍵 |
-|------|--------|
-| 運行應用 | `Shift + F10` |
-| 調試應用 | `Shift + F9` |
-| 停止運行 | `Ctrl + F2` |
-| 同步 Gradle | `Ctrl + Shift + O` |
-| 搜尋文件 | `Ctrl + Shift + N` |
-| 搜尋符號 | `Ctrl + Alt + Shift + N` |
-| 格式化代碼 | `Ctrl + Alt + L` |
-| 快速修復 | `Alt + Enter` |
-| 顯示使用處 | `Alt + F7` |
+### App 啟動閃退時怎麼抓問題
 
-### macOS
+請優先找這幾段：
+- `FATAL EXCEPTION`
+- `Caused by:`
+- 指向 `MainActivity.kt` 或 layout inflate 的那一行
 
-| 功能 | 快捷鍵 |
-|------|--------|
-| 運行應用 | `Ctrl + R` |
-| 調試應用 | `Ctrl + D` |
-| 停止運行 | `Cmd + F2` |
-| 同步 Gradle | `Cmd + Shift + O` |
-| 搜尋文件 | `Cmd + Shift + O` |
-| 搜尋符號 | `Cmd + Option + O` |
-| 格式化代碼 | `Cmd + Option + L` |
-| 快速修復 | `Option + Enter` |
-| 顯示使用處 | `Option + F7` |
+如果你要讓其他人協助排查，最有價值的是貼出：
+- exception 類型
+- `Caused by`
+- 前 10 到 20 行 stack trace
 
----
+## 10. 常見問題
 
-## 進階技巧
+### 1. Gradle Sync 失敗
 
-### 1. 使用版本控制
+優先檢查：
+- 網路是否能下載 Gradle distribution
+- Android SDK 是否完整
+- JDK / JBR 是否正確
 
-Android Studio 內建 Git 支援：
+### 2. SDK 未安裝或版本不對
 
-1. **啟用版本控制**
-   - 「VCS」>「Enable Version Control Integration」
-   - 選擇「Git」
+請到：
+- `File > Settings > Android SDK`
 
-2. **提交更改**
-   - 「VCS」>「Commit」
-   - 或使用快捷鍵：`Ctrl + K`（macOS: `Cmd + K`）
+確認 API 34 與 Build Tools 已安裝。
 
-### 2. 使用 Live Templates
+### 3. 模擬器啟動很慢或無法啟動
 
-快速生成常用代碼片段：
+先做：
+- 降低同時開啟的 IDE / 瀏覽器數量
+- 重新啟動模擬器
+- 確認虛擬化功能與 Android Emulator 元件已安裝
 
-- 輸入 `logd` 然後按 `Tab` 生成 Log.d
-- 輸入 `Toast` 然後按 `Tab` 生成 Toast 代碼
+### 4. 裝置未識別
 
-### 3. 使用插件
+先檢查：
+- 手機是否開啟 USB 偵錯
+- 是否已在手機上授權電腦
+- USB 線與 USB 埠是否正常
 
-擴展 Android Studio 功能：
+### 5. 啟動後直接閃退
 
-1. 「File」>「Settings」>「Plugins」
-2. 搜尋並安裝需要的插件
-3. 推薦插件：
-   - ADB Idea（ADB 工具增強）
-   - Rainbow Brackets（彩色括號）
-   - Material Theme UI（主題）
+先看 Logcat，抓：
+- `FATAL EXCEPTION`
+- `Caused by`
+- 指向專案檔案的行號
 
----
+如果沒有 stack trace，只憑「有閃退」很難準確定位。
 
-## 獲取幫助
+### 6. 測試跑不動
 
-### 官方資源
+先區分是哪一種問題：
+- Gradle / 網路下載問題
+- 沒有裝置或模擬器
+- 真正的測試失敗
 
-- **官方文檔**: https://developer.android.com/studio
-- **開發者指南**: https://developer.android.com/guide
-- **API 參考**: https://developer.android.com/reference
+不要把三種問題混在一起看。
 
-### 社群支援
+### 7. SAF 輸出或原文件目錄授權有問題
 
-- **Stack Overflow**: https://stackoverflow.com/questions/tagged/android-studio
-- **Reddit**: r/androiddev
-- **官方論壇**: https://developer.android.com/community
+先確認：
+- 是否真的選了對的資料夾
+- 是否是第一次授權該來源目錄
+- 是否先前已有儲存的 tree URI
+- 是否切到了互斥的輸出模式
 
----
+## 11. 建議閱讀順序
 
-## 下一步
+如果你是第一次接手這個專案，建議順序如下：
 
-現在您已經熟悉 Android Studio 的基本使用，可以開始：
+1. [README.md](./README.md)
+2. 本文件
+3. [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
+4. [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md)
+5. [PHASE3_TEST_HARDENING.md](./PHASE3_TEST_HARDENING.md)
 
-1. ✅ 打開 LrcApp 專案
-2. ✅ 同步 Gradle
-3. ✅ 運行應用
-4. 📝 開始開發和修改代碼
-5. 🐛 使用調試工具解決問題
-6. 📦 構建並分享您的應用
+## 12. 文件角色說明
 
-祝您開發愉快！🎉
-
+- `README.md`
+  - 產品入口、使用方式、最小建置命令
+- `ANDROID_STUDIO_GUIDE.md`
+  - Android Studio 開發、執行、排錯與裝置驗證手冊
+- `DEVELOPMENT_ROADMAP.md`
+  - 目前做到哪、下一步做什麼
+- `PHASE2_VALIDATION_REPORT.md`
+  - Android 版本差異與裝置驗證紀錄
+- `PHASE3_TEST_HARDENING.md`
+  - 測試資產、執行方式與阻塞
