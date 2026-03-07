@@ -23,6 +23,7 @@ import com.example.lrcapp.model.FileStatus
 import com.example.lrcapp.model.SubtitleFile
 import com.example.lrcapp.model.isEligibleForConversion
 import com.example.lrcapp.util.FileNameHelper
+import com.example.lrcapp.util.FileSelectionPolicy
 import com.example.lrcapp.util.FileValidator
 import com.example.lrcapp.util.OutputSettingsPolicy
 import com.example.lrcapp.util.SettingsManager
@@ -239,10 +240,22 @@ class MainActivity : AppCompatActivity() {
             }
 
             withContext(Dispatchers.Main) {
+                val mergeResult = FileSelectionPolicy.mergeSelections(
+                    existingFiles = files,
+                    newFiles = newFiles,
+                    appendToExisting = settings.outputToSourceDirectory
+                )
+
                 files.clear()
-                files.addAll(newFiles)
+                files.addAll(mergeResult.files)
                 adapter.notifyDataSetChanged()
-                Toast.makeText(this@MainActivity, "已選擇 ${newFiles.size} 個文件", Toast.LENGTH_SHORT).show()
+
+                val message = if (settings.outputToSourceDirectory) {
+                    "已新增 ${mergeResult.addedCount} 個文件，略過 ${mergeResult.skippedDuplicateCount} 個重複文件"
+                } else {
+                    "已選擇 ${newFiles.size} 個文件"
+                }
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -640,3 +653,5 @@ class MainActivity : AppCompatActivity() {
         val content: String
     )
 }
+
+
