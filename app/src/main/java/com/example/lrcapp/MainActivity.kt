@@ -6,8 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -48,7 +46,6 @@ class MainActivity : AppCompatActivity() {
 
     private val files = mutableListOf<SubtitleFile>()
     private var settings = AppSettings()
-    private var openPickerOnPermissionGrant = false
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -62,25 +59,9 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         if (permissions.values.all { it }) {
-            if (openPickerOnPermissionGrant) {
-                openFilePicker()
-            }
+            openFilePicker()
         } else {
             Toast.makeText(this, "未授予讀取外部儲存的權限", Toast.LENGTH_SHORT).show()
-        }
-        openPickerOnPermissionGrant = false
-    }
-
-    private val settingsLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (Environment.isExternalStorageManager()) {
-                if (openPickerOnPermissionGrant) {
-                    openFilePicker()
-                }
-            } else {
-                Toast.makeText(this, "未授予所有檔案存取權", Toast.LENGTH_SHORT).show()
-            }
-            openPickerOnPermissionGrant = false
         }
     }
 
@@ -100,7 +81,6 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
         setupRecyclerView()
         setupClickListeners()
-        checkAndRequestPermissions()
     }
 
     private fun initViews() {
@@ -129,8 +109,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         btnSelectFiles.setOnClickListener {
-            openPickerOnPermissionGrant = true
-            checkAndRequestPermissions()
+            checkAndRequestImportPermission()
         }
 
         btnConvert.setOnClickListener {
@@ -146,28 +125,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkAndRequestPermissions() {
+    private fun checkAndRequestImportPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.data = Uri.parse("package:$packageName")
-                settingsLauncher.launch(intent)
-            } else {
-                if (openPickerOnPermissionGrant) {
-                    openFilePicker()
-                    openPickerOnPermissionGrant = false
-                }
-            }
+            openFilePicker()
+            return
+        }
+
+        val permission = Manifest.permission.READ_EXTERNAL_STORAGE
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            permissionLauncher.launch(arrayOf(permission))
         } else {
-            val permission = Manifest.permission.READ_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(arrayOf(permission))
-            } else {
-                if (openPickerOnPermissionGrant) {
-                    openFilePicker()
-                    openPickerOnPermissionGrant = false
-                }
-            }
+            openFilePicker()
         }
     }
 
@@ -337,9 +305,9 @@ class MainActivity : AppCompatActivity() {
         if (uriString != null) {
             val uri = Uri.parse(uriString)
             val docFile = DocumentFile.fromTreeUri(this, uri)
-            tvOutputDir.text = "儲存位置: ${docFile?.name}"
+            tvOutputDir.text = "儲存位置: ${docFile?.name}（SAF 授權目錄）"
         } else {
-            tvOutputDir.text = "儲存位置: 預設下載目錄"
+            tvOutputDir.text = "儲存位置: 預設應用下載目錄"
         }
     }
 }

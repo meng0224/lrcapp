@@ -53,7 +53,7 @@
                         android:id="@+id/tvOutputDir"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="儲存位置: 預設下載目錄"
+                        android:text="儲存位置: 預設應用下載目錄"
                         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
                         android:textColor="?android:attr/textColorSecondary"/>
 
@@ -131,3 +131,4 @@
     </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+

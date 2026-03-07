@@ -31,14 +31,29 @@
    - `SubtitleConverterTest`
    - `StorageHelperTest`
 
+#### Phase 2: Android 11+ 權限與儲存策略整理
+
+已完成以下修復：
+
+1. Android 11+ 匯入流程改為直接使用系統文件選擇器
+   - 不再依賴 `MANAGE_EXTERNAL_STORAGE`
+   - App 冷啟動時不再先跳出與匯入無關的全域權限流程
+2. Android 7~10 保留舊版 `READ_EXTERNAL_STORAGE` 選檔授權
+3. Manifest 已移除高風險權限與過時設定
+   - 移除 `MANAGE_EXTERNAL_STORAGE`
+   - 移除 `requestLegacyExternalStorage`
+   - `READ_EXTERNAL_STORAGE` 限制在 `maxSdkVersion=29`
+4. App 內文案與文件已對齊
+   - 預設輸出位置改稱「預設應用下載目錄」
+   - 自訂輸出目錄明確標示為 SAF 授權目錄
+   - README 與 Android Studio 指南同步更新
+
 ### 已知阻塞
 
 1. 單元測試尚未在此環境實際跑通
    - 原因不是目前變更已確認的編譯錯誤
    - 阻塞點是本機執行環境缺少可直接使用的 Java / Gradle wrapper 下載受限
-2. Android 11+ 權限策略尚未調整
-   - 目前仍維持既有 `MANAGE_EXTERNAL_STORAGE` 流程
-   - 這部分保留到 Phase 2
+2. 文件與程式已對齊，但 Android 11+ / Android 7~10 的實機流程仍需要手動驗證
 
 ## 2. Roadmap
 
@@ -58,33 +73,21 @@
 
 ### Phase 2: Android 11+ 權限與儲存策略整理
 
-狀態：`NEXT`
+狀態：`DONE`
 
-目標：
-- 移除 Android 11+ 對 `MANAGE_EXTERNAL_STORAGE` 的主流程依賴
-- 讓匯入與匯出優先完全依賴 SAF
-- 將 Manifest、README、UI 文案與真實行為對齊
+交付內容：
+- Android 11+ 使用者不需授予 all files access 也可選檔
+- App 冷啟動時不再預先跳全域存取權限流程
+- Manifest 與儲存文案對齊 SAF + app-specific downloads 的實際行為
+- README 與 Android Studio 指南同步更新
 
-主要工作：
-1. 調整 `MainActivity.checkAndRequestPermissions()`
-   - Android 11+ 開啟檔案選擇器時不再強制要求 all files access
-2. 重新梳理儲存策略
-   - 明確區分 SAF 目錄輸出與預設 app-specific downloads
-3. 清理 Manifest
-   - 評估移除 `MANAGE_EXTERNAL_STORAGE`
-   - 評估移除或保留 `requestLegacyExternalStorage`
-4. 更新文件
-   - README 權限說明
-   - Android Studio 使用教學中的實際操作說明
-
-交付標準：
-- Android 11+ 使用者在未授予 all files access 的情況下仍可正常選檔與輸出
-- README 與實際行為一致
-- Play policy 風險降低
+收尾工作：
+- 在 Android 11+ 實機或模擬器驗證選檔與輸出流程
+- 在 Android 7~10 驗證 `READ_EXTERNAL_STORAGE` 的舊版流程
 
 ### Phase 3: 測試補強與回歸保護
 
-狀態：`PLANNED`
+狀態：`NEXT`
 
 目標：
 - 把目前偏靜態的驗證改成可持續回歸的測試組合
@@ -104,6 +107,7 @@
    - 轉換成功
    - 同名覆寫
    - 自訂輸出目錄
+   - Android 版本差異流程
 
 交付標準：
 - 核心 parser 與狀態邏輯有穩定的單元測試
@@ -137,12 +141,13 @@
 ### 立即進行
 
 1. 在有可用 JDK 與網路的環境跑通 `testDebugUnitTest`
-2. 開始實作 Phase 2 權限與文件整理
+2. 補齊 Phase 3 的 parser / validator / storage 測試
+3. 做 Android 11+ 與 Android 7~10 的實機手動驗證
 
 ### 之後接續
 
-1. 擴充 parser / validator 測試
-2. 重整 `MainActivity` 的責任分配
+1. 重整 `MainActivity` 的責任分配
+2. 規劃 parser 與儲存層拆分
 
 ## 4. 驗收清單
 
@@ -163,6 +168,7 @@
 
 - 單元測試覆蓋主要 parser 與 validator
 - 儲存路徑至少有一層自動化驗證
+- 重要 Android 版本差異流程有手動驗證紀錄
 
 ## 5. 相關文件
 

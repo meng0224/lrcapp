@@ -261,6 +261,13 @@
    - 底部「Logcat」視窗會顯示應用日誌
    - 如果有錯誤，會以紅色顯示
 
+### LrcApp 權限與儲存說明
+
+- Android 11+：LrcApp 透過系統文件選擇器與 SAF 存取檔案，不需要授予「所有檔案存取權」
+- Android 7~10：第一次選檔時可能會要求 `READ_EXTERNAL_STORAGE`
+- 未選擇自訂輸出資料夾時，轉換結果會保存到 App-specific downloads
+- 使用「選擇目錄」後，輸出會寫入使用者授權的 SAF 目錄
+
 ---
 
 ## 基本操作
@@ -484,3 +491,4 @@ Android Studio 內建 Git 支援：
 6. 📦 構建並分享您的應用
 
 祝您開發愉快！🎉
+
