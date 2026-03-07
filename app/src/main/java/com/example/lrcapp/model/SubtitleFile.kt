@@ -1,7 +1,6 @@
 package com.example.lrcapp.model
 
 import android.net.Uri
-import java.io.File
 
 data class SubtitleFile(
     val uri: Uri,
@@ -14,8 +13,13 @@ data class SubtitleFile(
 )
 
 enum class FileStatus {
-    PENDING,      // 待處理
-    PROCESSING,   // 處理中
-    SUCCESS,      // 成功
-    ERROR         // 錯誤
+    PENDING,
+    INVALID,
+    PROCESSING,
+    SUCCESS,
+    ERROR
+}
+
+fun FileStatus.isEligibleForConversion(): Boolean {
+    return this == FileStatus.PENDING || this == FileStatus.ERROR
 }

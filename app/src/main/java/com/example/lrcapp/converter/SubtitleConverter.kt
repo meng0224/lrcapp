@@ -20,7 +20,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
         return try {
             val content = readFileContent(uri)
             val extension = FileValidator.getExtension(fileName)
-            
+
             when (extension) {
                 "vtt" -> convertVttToLrc(content)
                 "srt" -> convertSrtToLrc(content)
@@ -40,7 +40,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
      */
     private fun readFileContent(uri: Uri): String {
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            BufferedReader(InputStreamReader(inputStream, "UTF-8")).use { reader ->
+            BufferedReader(InputStreamReader(inputStream, Charsets.UTF_8)).use { reader ->
                 return reader.readText()
             }
         } ?: throw Exception("無法讀取文件")
@@ -52,60 +52,14 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     private fun convertVttToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
-        
+
         // VTT 時間格式: 00:00:00.000 --> 00:00:01.000
         val timePattern = Pattern.compile("(\\d{2}):(\\d{2}):(\\d{2})\\.(\\d{3})")
-        
+
         var i = 0
         while (i < lines.size) {
             val line = lines[i].trim()
 
-            if (line.contains("-->")) {
-                val timeMatch = timePattern.matcher(line)
-                if (timeMatch.find()) {
-                    val startTime = formatTimeToLrc(
-                        timeMatch.group(1).toInt(), // 小時
-                        timeMatch.group(2).toInt(), // 分鐘
-                        timeMatch.group(3).toInt(), // 秒
-                        timeMatch.group(4).toInt()  // 毫秒
-                    )
-                    
-                    // 讀取後續文本行，直到遇到空行
-                    val textLines = mutableListOf<String>()
-                    i++
-                    while (i < lines.size && lines[i].trim().isNotEmpty()) {
-                        textLines.add(lines[i].trim())
-                        i++
-                    }
-                    
-                    val text = cleanText(textLines.joinToString(" "))
-                    if (text.isNotEmpty()) {
-                        lrcLines.add("[$startTime]$text")
-                    }
-                    continue // 繼續外層循環
-                }
-            }
-            i++
-        }
-        
-        return lrcLines.joinToString("\n")
-    }
-
-    /**
-     * 轉換 SRT 格式
-     */
-    private fun convertSrtToLrc(content: String): String {
-        val lines = content.lines()
-        val lrcLines = mutableListOf<String>()
-        
-        // SRT 時間格式: 00:00:00,000 --> 00:00:01,000 或 00:00:00.000 --> 00:00:01.000
-        val timePattern = Pattern.compile("(\\d{2}):(\\d{2}):(\\d{2})[,.]?(\\d{3})")
-        
-        var i = 0
-        while (i < lines.size) {
-            val line = lines[i].trim()
-            
-            // 只尋找時間軸
             if (line.contains("-->")) {
                 val timeMatch = timePattern.matcher(line)
                 if (timeMatch.find()) {
@@ -115,74 +69,118 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
                         timeMatch.group(3).toInt(),
                         timeMatch.group(4).toInt()
                     )
-                    
-                    // 讀取後續文本行，直到遇到空行
+
                     val textLines = mutableListOf<String>()
                     i++
                     while (i < lines.size && lines[i].trim().isNotEmpty()) {
                         textLines.add(lines[i].trim())
                         i++
                     }
-                    
+
                     val text = cleanText(textLines.joinToString(" "))
                     if (text.isNotEmpty()) {
                         lrcLines.add("[$startTime]$text")
                     }
-                    continue // 繼續外層循環
+                    continue
                 }
             }
             i++
         }
-        
+
+        return lrcLines.joinToString("\n")
+    }
+
+    /**
+     * 轉換 SRT 格式
+     */
+    private fun convertSrtToLrc(content: String): String {
+        val lines = content.lines()
+        val lrcLines = mutableListOf<String>()
+
+        val timePattern = Pattern.compile("(\\d{2}):(\\d{2}):(\\d{2})[,.]?(\\d{3})")
+
+        var i = 0
+        while (i < lines.size) {
+            val line = lines[i].trim()
+
+            if (line.contains("-->")) {
+                val timeMatch = timePattern.matcher(line)
+                if (timeMatch.find()) {
+                    val startTime = formatTimeToLrc(
+                        timeMatch.group(1).toInt(),
+                        timeMatch.group(2).toInt(),
+                        timeMatch.group(3).toInt(),
+                        timeMatch.group(4).toInt()
+                    )
+
+                    val textLines = mutableListOf<String>()
+                    i++
+                    while (i < lines.size && lines[i].trim().isNotEmpty()) {
+                        textLines.add(lines[i].trim())
+                        i++
+                    }
+
+                    val text = cleanText(textLines.joinToString(" "))
+                    if (text.isNotEmpty()) {
+                        lrcLines.add("[$startTime]$text")
+                    }
+                    continue
+                }
+            }
+            i++
+        }
+
         return lrcLines.joinToString("\n")
     }
 
     /**
      * 轉換 ASS/SSA 格式
      */
-    private fun convertAssToLrc(content: String): String {
+    internal fun convertAssToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
-        
-        // ASS/SSA Dialogue 格式: Dialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,文本內容
-        val dialoguePattern = Pattern.compile("Dialogue:\\s*[^,]*,\\s*(\\d+):(\\d{2}):(\\d{2})[.,](\\d{2})")
-        
+        var inEventsSection = false
+        var textColumnIndex: Int? = null
+
         for (line in lines) {
             val trimmedLine = line.trim()
-            
-            // 跳過註釋和樣式定義
-            if (trimmedLine.startsWith(";") || 
-                trimmedLine.startsWith("[Script Info]") ||
-                trimmedLine.startsWith("[V4+ Styles]") ||
-                trimmedLine.startsWith("[Events]") ||
-                trimmedLine.startsWith("Format:")) {
+            if (trimmedLine.isEmpty() || trimmedLine.startsWith(";")) {
                 continue
             }
-            
-            // 處理 Dialogue 行
-            if (trimmedLine.startsWith("Dialogue:")) {
-                val match = dialoguePattern.matcher(trimmedLine)
-                if (match.find()) {
-                    val startTime = formatTimeToLrc(
-                        match.group(1).toInt(),
-                        match.group(2).toInt(),
-                        match.group(3).toInt(),
-                        match.group(4).toInt() * 10 // 百分秒轉毫秒
-                    )
-                    
-                    // 提取文本內容（最後一個逗號後的部分）
-                    val textStart = trimmedLine.lastIndexOf(',') + 1
-                    if (textStart > 0 && textStart < trimmedLine.length) {
-                        var text = trimmedLine.substring(textStart)
-                        text = cleanAssText(text)
-                        if (text.isNotEmpty()) {
-                            lrcLines.add("[$startTime]$text")
-                        }
-                    }
+
+            if (trimmedLine.startsWith("[")) {
+                inEventsSection = trimmedLine.equals("[Events]", ignoreCase = true)
+                continue
+            }
+
+            if (!inEventsSection) {
+                continue
+            }
+
+            if (trimmedLine.startsWith("Format:", ignoreCase = true)) {
+                textColumnIndex = parseAssTextColumnIndex(trimmedLine)
+                continue
+            }
+
+            if (!trimmedLine.startsWith("Dialogue:", ignoreCase = true)) {
+                continue
+            }
+
+            val dialogue = parseAssDialogue(trimmedLine, textColumnIndex)
+            if (dialogue != null) {
+                val startTime = formatTimeToLrc(
+                    dialogue.hours,
+                    dialogue.minutes,
+                    dialogue.seconds,
+                    dialogue.centiseconds * 10
+                )
+                val text = cleanAssText(dialogue.text)
+                if (text.isNotEmpty()) {
+                    lrcLines.add("[$startTime]$text")
                 }
             }
         }
-        
+
         return lrcLines.joinToString("\n")
     }
 
@@ -192,27 +190,23 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     private fun convertSmiToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
-        
-        // SMI 時間格式: <SYNC Start=12345>
+
         val syncPattern = Pattern.compile("<SYNC\\s+Start=(\\d+)>", Pattern.CASE_INSENSITIVE)
-        
+
         var currentTime = 0L
         var currentText = StringBuilder()
-        
+
         for (line in lines) {
             val trimmedLine = line.trim()
-            
-            // 跳過 HTML 標籤和註釋
-            if (trimmedLine.startsWith("<!--") || trimmedLine.startsWith("<HEAD>") || 
+
+            if (trimmedLine.startsWith("<!--") || trimmedLine.startsWith("<HEAD>") ||
                 trimmedLine.startsWith("</HEAD>") || trimmedLine.startsWith("<BODY>") ||
                 trimmedLine.startsWith("</BODY>")) {
                 continue
             }
-            
-            // 處理 SYNC 標籤
+
             val syncMatch = syncPattern.matcher(trimmedLine)
             if (syncMatch.find()) {
-                // 保存前一個時間點的文本
                 if (currentTime > 0 && currentText.isNotEmpty()) {
                     val timeStr = formatTimeFromMilliseconds(currentTime)
                     val text = cleanText(currentText.toString())
@@ -220,21 +214,19 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
                         lrcLines.add("[$timeStr]$text")
                     }
                 }
-                
+
                 currentTime = syncMatch.group(1).toLong()
                 currentText.clear()
             } else if (trimmedLine.startsWith("<P") || trimmedLine.startsWith("</P>")) {
-                // 段落標籤，忽略
+                // ignore paragraph tags
             } else if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("<")) {
-                // 文本內容
                 if (currentText.isNotEmpty()) {
                     currentText.append(" ")
                 }
                 currentText.append(cleanText(trimmedLine))
             }
         }
-        
-        // 處理最後一個時間點
+
         if (currentTime > 0 && currentText.isNotEmpty()) {
             val timeStr = formatTimeFromMilliseconds(currentTime)
             val text = cleanText(currentText.toString())
@@ -242,7 +234,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
                 lrcLines.add("[$timeStr]$text")
             }
         }
-        
+
         return lrcLines.joinToString("\n")
     }
 
@@ -252,57 +244,82 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     private fun convertSubToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
-        
-        // SUB 時間格式: {12345}{12350}文本內容
+
         val subPattern = Pattern.compile("\\{(\\d+)\\}\\{(\\d+)\\}(.*)")
-        
+
         for (line in lines) {
             val trimmedLine = line.trim()
             if (trimmedLine.isEmpty()) continue
-            
+
             val match = subPattern.matcher(trimmedLine)
             if (match.find()) {
                 val startTimeMs = match.group(1).toLong()
                 val text = cleanText(match.group(3))
-                
+
                 if (text.isNotEmpty()) {
                     val timeStr = formatTimeFromMilliseconds(startTimeMs)
                     lrcLines.add("[$timeStr]$text")
                 }
             }
         }
-        
+
         return lrcLines.joinToString("\n")
+    }
+
+    internal fun parseAssTextColumnIndex(formatLine: String): Int? {
+        val columns = formatLine.substringAfter(':', "")
+            .split(',')
+            .map { it.trim().lowercase() }
+        val index = columns.indexOf("text")
+        return if (index >= 0) index else null
+    }
+
+    internal fun parseAssDialogue(dialogueLine: String, textColumnIndex: Int?): AssDialogue? {
+        val body = dialogueLine.substringAfter(':', "").trim()
+        if (body.isEmpty()) {
+            return null
+        }
+
+        val resolvedTextColumnIndex = textColumnIndex ?: ASS_FALLBACK_TEXT_COLUMN_INDEX
+        val fields = body.split(',', limit = resolvedTextColumnIndex + 1)
+        if (fields.size <= resolvedTextColumnIndex || fields.size <= ASS_START_COLUMN_INDEX) {
+            return null
+        }
+
+        val timeMatch = ASS_TIME_PATTERN.matcher(fields[ASS_START_COLUMN_INDEX].trim())
+        if (!timeMatch.matches()) {
+            return null
+        }
+
+        return AssDialogue(
+            hours = timeMatch.group(1).toInt(),
+            minutes = timeMatch.group(2).toInt(),
+            seconds = timeMatch.group(3).toInt(),
+            centiseconds = timeMatch.group(4).toInt(),
+            text = fields[resolvedTextColumnIndex].trim()
+        )
     }
 
     /**
      * 清理文本（移除 HTML 標籤、樣式代碼等）
      */
     private fun cleanText(text: String): String {
-        var cleaned = text
-            // 移除 HTML 標籤
+        return text
             .replace(Regex("<[^>]+>"), "")
-            // 移除多餘空格
             .replace(Regex("\\s+"), " ")
             .trim()
-        
-        return cleaned
     }
 
     /**
      * 清理 ASS 文本（移除樣式代碼）
      */
     private fun cleanAssText(text: String): String {
-        var cleaned = text
-            // 移除 ASS 樣式代碼 {\\...}
+        return text
             .replace(Regex("\\{[^}]*\\}"), "")
-            // 移除 HTML 標籤
             .replace(Regex("<[^>]+>"), "")
-            // 移除多餘空格
+            .replace(Regex("\\\\[Nn]"), " ")
             .replace(Regex("\\s+"), " ")
             .trim()
-        
-        return cleaned
     }
 
     /**
@@ -311,13 +328,11 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     private fun formatTimeToLrc(hours: Int, minutes: Int, seconds: Int, milliseconds: Int): String {
         val totalMinutes = hours * 60 + minutes
         val totalSeconds = seconds
-        
+
         return if (settings.timePrecision) {
-            // 保留毫秒精度
             val centiseconds = milliseconds / 10
             String.format("%02d:%02d.%02d", totalMinutes, totalSeconds, centiseconds)
         } else {
-            // 只保留秒
             String.format("%02d:%02d.00", totalMinutes, totalSeconds)
         }
     }
@@ -330,11 +345,25 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
         val minutes = (totalSeconds / 60).toInt()
         val seconds = (totalSeconds % 60).toInt()
         val centiseconds = ((milliseconds % 1000) / 10).toInt()
-        
+
         return if (settings.timePrecision) {
             String.format("%02d:%02d.%02d", minutes, seconds, centiseconds)
         } else {
             String.format("%02d:%02d.00", minutes, seconds)
         }
+    }
+
+    internal data class AssDialogue(
+        val hours: Int,
+        val minutes: Int,
+        val seconds: Int,
+        val centiseconds: Int,
+        val text: String
+    )
+
+    companion object {
+        private const val ASS_START_COLUMN_INDEX = 1
+        private const val ASS_FALLBACK_TEXT_COLUMN_INDEX = 9
+        private val ASS_TIME_PATTERN = Pattern.compile("^(\\d+):(\\d{2}):(\\d{2})[.,](\\d{2})$")
     }
 }

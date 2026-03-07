@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lrcapp.adapter.SubtitleFileAdapter
@@ -22,14 +23,14 @@ import com.example.lrcapp.converter.SubtitleConverter
 import com.example.lrcapp.model.AppSettings
 import com.example.lrcapp.model.FileStatus
 import com.example.lrcapp.model.SubtitleFile
+import com.example.lrcapp.model.isEligibleForConversion
 import com.example.lrcapp.util.FileNameHelper
 import com.example.lrcapp.util.FileValidator
 import com.example.lrcapp.util.SettingsManager
 import com.example.lrcapp.util.StorageHelper
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import androidx.lifecycle.lifecycleScope
-import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -194,7 +195,7 @@ class MainActivity : AppCompatActivity() {
                         uri = uri,
                         fileName = fileName,
                         fileSize = fileSize,
-                        status = if (isValid) FileStatus.PENDING else FileStatus.ERROR,
+                        status = if (isValid) FileStatus.PENDING else FileStatus.INVALID,
                         errorMessage = errorMessage
                     )
 
@@ -248,9 +249,9 @@ class MainActivity : AppCompatActivity() {
         progressBar.progress = 0
         progressBar.visibility = android.view.View.VISIBLE
         tvProgress.visibility = android.view.View.VISIBLE
-        val filesToProcess = files.filter { it.status == FileStatus.PENDING || it.status == FileStatus.ERROR }
+        val filesToProcess = files.filter { it.status.isEligibleForConversion() }
         if (filesToProcess.isEmpty()) {
-            Toast.makeText(this, "沒有需要轉換的文件", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "沒有可轉換的文件", Toast.LENGTH_SHORT).show()
             progressBar.visibility = android.view.View.GONE
             tvProgress.visibility = android.view.View.GONE
             return

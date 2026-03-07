@@ -42,6 +42,18 @@ class SubtitleFileAdapter(
                 holder.tvOutputFileName.visibility = View.GONE
                 holder.tvErrorMessage.visibility = View.GONE
             }
+            FileStatus.INVALID -> {
+                holder.tvStatus.text = "無效"
+                holder.tvStatus.setBackgroundResource(R.drawable.status_background_error)
+                holder.tvStatus.setTextColor(com.google.android.material.color.MaterialColors.getColor(context, M3R.attr.colorOnErrorContainer, ContextCompat.getColor(context, android.R.color.black)))
+                holder.tvOutputFileName.visibility = View.GONE
+                if (file.errorMessage != null) {
+                    holder.tvErrorMessage.text = file.errorMessage
+                    holder.tvErrorMessage.visibility = View.VISIBLE
+                } else {
+                    holder.tvErrorMessage.visibility = View.GONE
+                }
+            }
             FileStatus.PROCESSING -> {
                 holder.tvStatus.text = "處理中"
                 holder.tvStatus.setBackgroundResource(R.drawable.status_background_processing)
@@ -67,6 +79,8 @@ class SubtitleFileAdapter(
                 if (file.errorMessage != null) {
                     holder.tvErrorMessage.text = file.errorMessage
                     holder.tvErrorMessage.visibility = View.VISIBLE
+                } else {
+                    holder.tvErrorMessage.visibility = View.GONE
                 }
             }
         }
