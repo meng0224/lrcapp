@@ -29,7 +29,7 @@ import com.example.lrcapp.util.SettingsManager
 import com.example.lrcapp.util.StorageHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvOutputDir: TextView
     private lateinit var btnSelectOutputDir: MaterialButton
     private lateinit var btnClearOutputDir: MaterialButton
-    private lateinit var switchOutputToSourceDirectory: MaterialSwitch
+    private lateinit var switchOutputToSourceDirectory: SwitchMaterial
     private lateinit var toolbar: MaterialToolbar
 
     private val files = mutableListOf<SubtitleFile>()
