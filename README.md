@@ -9,10 +9,6 @@ LrcApp 是一個 Android 字幕轉換工具，可將常見字幕格式轉成 LRC
 - [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md) - Android 版本差異與 Phase 2 驗證記錄
 - [PHASE3_TEST_HARDENING.md](./PHASE3_TEST_HARDENING.md) - 測試補強、執行鏈路與阻塞
 
-## Android Studio 安裝與使用教學
-
-請先閱讀：`ANDROID_STUDIO_GUIDE.md`
-
 ## 主要功能
 
 - 支援 `VTT`、`ASS`、`SSA`、`SRT`、`STR`、`SMI`、`SUB` 轉成 `LRC`
@@ -70,32 +66,20 @@ LrcApp 是一個 Android 字幕轉換工具，可將常見字幕格式轉成 LRC
 - 「智能命名清理」與「時間精度優化」目前固定啟用，尚無 UI 開關
 - 轉換完成後會自動保存所有成功檔案，不提供單檔下載或 ZIP 打包流程
 
-## 開發與執行
-
-### 建置
-
-Windows:
+## 開發與建置
 
 ```bash
+# Windows
 .\gradlew.bat build
-```
-
-macOS / Linux:
-
-```bash
-./gradlew build
-```
-
-### 安裝到裝置
-
-Windows:
-
-```bash
 .\gradlew.bat installDebug
-```
 
-macOS / Linux:
-
-```bash
+# macOS / Linux
+./gradlew build
 ./gradlew installDebug
 ```
+
+完整 IDE 操作與裝置執行請見 [ANDROID_STUDIO_GUIDE.md](./ANDROID_STUDIO_GUIDE.md)。
+
+## Android Studio 詳細教學
+
+Android Studio 安裝、Gradle Sync、模擬器與 Logcat 操作請見 [ANDROID_STUDIO_GUIDE.md](./ANDROID_STUDIO_GUIDE.md)。
