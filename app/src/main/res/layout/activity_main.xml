@@ -29,7 +29,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 儲存位置 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -45,9 +44,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
                         android:text="儲存位置"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-                        android:layout_marginBottom="8dp"/>
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
 
                     <TextView
                         android:id="@+id/tvOutputDir"
@@ -55,32 +54,61 @@
                         android:layout_height="wrap_content"
                         android:text="儲存位置: 預設應用下載目錄"
                         android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                        android:textColor="?android:attr/textColorSecondary"/>
+                        android:textColor="?android:attr/textColorSecondary" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSelectOutputDir"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"
-                        android:layout_width="wrap_content"
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchOutputToSourceDirectory"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="輸出到原文件目錄"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="開啟後，會依來源檔案的資料夾逐一要求 SAF 授權並寫回原目錄。"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                        android:textColor="?android:attr/textColorSecondary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="選擇目錄"/>
+                        android:gravity="end"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearOutputDir"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="清除目錄" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSelectOutputDir"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="選擇目錄" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 操作按鈕區域 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSelectFiles"
                     style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
                     android:text="選擇文件" />
 
                 <com.google.android.material.button.MaterialButton
@@ -88,38 +116,36 @@
                     style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:layout_marginStart="8dp"
+                    android:layout_weight="1"
                     android:text="開始轉換" />
             </LinearLayout>
 
-            <!-- 進度條 -->
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/progressBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:visibility="gone"
                 android:max="100"
-                android:progress="0" />
+                android:progress="0"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/tvProgress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 android:text="進度: 0%"
                 android:textAlignment="center"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"/>
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:visibility="gone" />
 
-            <!-- 文件列表 -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
                 android:text="文件列表"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
-                android:layout_marginBottom="8dp" />
+                android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
@@ -131,4 +157,3 @@
     </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-

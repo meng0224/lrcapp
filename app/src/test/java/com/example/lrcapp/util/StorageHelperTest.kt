@@ -40,6 +40,31 @@ class StorageHelperTest {
         assertEquals(2, savedCount)
     }
 
+    @Test
+    fun countSuccessfulOutputResultsOnlyCountsSuccessfulTargets() {
+        val successTarget = StorageHelper.OutputTarget(
+            directoryUri = Uri.parse("content://tree/one"),
+            fileName = "a.lrc",
+            content = "[00:00.00]A",
+            fileIndex = 0
+        )
+        val failedTarget = StorageHelper.OutputTarget(
+            directoryUri = Uri.parse("content://tree/two"),
+            fileName = "b.lrc",
+            content = "[00:00.00]B",
+            fileIndex = 1
+        )
+
+        val count = StorageHelper.countSuccessfulOutputResults(
+            listOf(
+                StorageHelper.OutputResult(successTarget, "a.lrc"),
+                StorageHelper.OutputResult(failedTarget, null)
+            )
+        )
+
+        assertEquals(1, count)
+    }
+
     private class FakeDocumentFile(
         private val displayName: String,
         private val directory: Boolean,

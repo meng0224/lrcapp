@@ -16,6 +16,22 @@ import java.util.zip.ZipOutputStream
 
 object StorageHelper {
 
+    data class OutputTarget(
+        val directoryUri: Uri,
+        val fileName: String,
+        val content: String,
+        val fileIndex: Int,
+        val sourceDirectoryKey: String? = null
+    )
+
+    data class OutputResult(
+        val target: OutputTarget,
+        val savedFileName: String?
+    ) {
+        val isSuccess: Boolean
+            get() = savedFileName != null
+    }
+
     fun getDownloadDirectory(context: Context): File {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
@@ -52,6 +68,10 @@ object StorageHelper {
 
     internal fun countSuccessfulResults(results: List<String?>): Int {
         return results.count { it != null }
+    }
+
+    internal fun countSuccessfulOutputResults(results: List<OutputResult>): Int {
+        return results.count { it.isSuccess }
     }
 
     private fun writeBytesToDocument(context: Context, file: DocumentFile, contentBytes: ByteArray): Boolean {
@@ -124,6 +144,19 @@ object StorageHelper {
         } catch (e: IOException) {
             e.printStackTrace()
             null
+        }
+    }
+
+    fun saveOutputTargets(context: Context, targets: List<OutputTarget>): List<OutputResult> {
+        return targets.map { target ->
+            val savedFileName = saveContentToUri(
+                context = context,
+                dirUri = target.directoryUri,
+                fileName = target.fileName,
+                mimeType = "application/octet-stream",
+                contentBytes = target.content.toByteArray(Charsets.UTF_8)
+            )
+            OutputResult(target, savedFileName)
         }
     }
 

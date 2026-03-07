@@ -72,22 +72,45 @@
 - 下一步：
   - 等 Phase 2 驗證與 Phase 3 自動化穩定後再開始
 
-## 2. Current Blockers
+## 2. Feature Track
+
+### 輸出到原文件目錄
+
+- 狀態：`IN PROGRESS`
+- 目標：新增可持久化的輸出模式，讓轉換結果可依來源資料夾寫回原文件目錄
+- 已完成：
+  - `AppSettings` / `SettingsManager` 新增 `outputToSourceDirectory`
+  - 主畫面新增「輸出到原文件目錄」開關與「清除目錄」按鈕
+  - 自訂輸出資料夾與原文件目錄模式互斥
+  - 每個來源資料夾可保存獨立的 SAF tree URI 授權
+  - `StorageHelper` 新增多目標輸出模型與保存結果統計
+  - 補上 `SettingsManagerTest`、`OutputSettingsPolicyTest`、`StorageHelperTest` 擴充案例
+- 未完成：
+  - 在可用環境實際編譯並跑通測試
+  - 實機驗證單一來源 / 多來源 / 重用授權流程
+- 下一步：
+  - 在 Android 11+ 裝置驗證逐目錄授權與回寫流程
+  - 在可用 Gradle 環境執行 unit tests 與回歸檢查
+
+## 3. Current Blockers
 
 - `gradlew.bat testDebugUnitTest` 受限於目前環境無法下載 `gradle-9.0-milestone-1-bin.zip`
 - instrumentation 需要可用 emulator / device
 - Phase 2 雖已實作，但尚未完成裝置驗證回填
+- 新增的「輸出到原文件目錄」功能尚未在實機上完成逐目錄授權驗證
 
-## 3. Immediate Next Steps
+## 4. Immediate Next Steps
 
 1. 在可提供 Gradle 發行版的環境執行 unit tests
 2. 在可用 emulator / device 執行 instrumentation tests
 3. 依 validation report 完成 Android 11+ 與 Android 7~10 驗證
-4. 更新各附屬文件中的 `status / passed / blocked` 結果
+4. 針對「輸出到原文件目錄」驗證單一來源、多來源與授權重用流程
+5. 更新各附屬文件中的 `status / passed / blocked` 結果
 
-## 4. Acceptance Snapshot
+## 5. Acceptance Snapshot
 
 - Phase 1 完成條件：功能修復已上線且 unit tests 在正式環境跑通
 - Phase 2 完成條件：Android 11+ 與 Android 7~10 驗證結果已回填且通過
 - Phase 3 完成條件：unit tests 與最小 instrumentation 至少各跑通一次
 - Phase 4 開始條件：Phase 2、3 不再處於 `VALIDATION PENDING` / `IN PROGRESS`
+- 新功能完成條件：來源目錄輸出在單一來源、多來源與重複授權重用場景都通過手動驗證

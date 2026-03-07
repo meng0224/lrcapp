@@ -9,7 +9,9 @@ data class SubtitleFile(
     var status: FileStatus = FileStatus.PENDING,
     var errorMessage: String? = null,
     var outputFileName: String? = null,
-    var lrcContent: String? = null
+    var lrcContent: String? = null,
+    var sourceDirectoryKey: String? = null,
+    var sourceDirectoryLabel: String? = null
 )
 
 enum class FileStatus {
