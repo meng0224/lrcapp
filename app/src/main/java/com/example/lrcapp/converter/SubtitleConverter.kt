@@ -19,19 +19,23 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     fun convertToLrc(uri: Uri, fileName: String): String? {
         return try {
             val content = readFileContent(uri)
-            val extension = FileValidator.getExtension(fileName)
-
-            when (extension) {
-                "vtt" -> convertVttToLrc(content)
-                "srt" -> convertSrtToLrc(content)
-                "ass", "ssa" -> convertAssToLrc(content)
-                "smi" -> convertSmiToLrc(content)
-                "sub", "str" -> convertSubToLrc(content)
-                else -> null
-            }
+            convertContentToLrc(content, fileName)
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    internal fun convertContentToLrc(content: String, fileName: String): String? {
+        val extension = FileValidator.getExtension(fileName)
+
+        return when (extension) {
+            "vtt" -> convertVttToLrc(content)
+            "srt" -> convertSrtToLrc(content)
+            "ass", "ssa" -> convertAssToLrc(content)
+            "smi" -> convertSmiToLrc(content)
+            "sub", "str" -> convertSubToLrc(content)
+            else -> null
         }
     }
 
@@ -49,11 +53,10 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     /**
      * 轉換 VTT 格式
      */
-    private fun convertVttToLrc(content: String): String {
+    internal fun convertVttToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
 
-        // VTT 時間格式: 00:00:00.000 --> 00:00:01.000
         val timePattern = Pattern.compile("(\\d{2}):(\\d{2}):(\\d{2})\\.(\\d{3})")
 
         var i = 0
@@ -93,7 +96,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     /**
      * 轉換 SRT 格式
      */
-    private fun convertSrtToLrc(content: String): String {
+    internal fun convertSrtToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
 
@@ -187,7 +190,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     /**
      * 轉換 SMI 格式
      */
-    private fun convertSmiToLrc(content: String): String {
+    internal fun convertSmiToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
 
@@ -241,7 +244,7 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
     /**
      * 轉換 SUB 格式
      */
-    private fun convertSubToLrc(content: String): String {
+    internal fun convertSubToLrc(content: String): String {
         val lines = content.lines()
         val lrcLines = mutableListOf<String>()
 
@@ -300,9 +303,6 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
         )
     }
 
-    /**
-     * 清理文本（移除 HTML 標籤、樣式代碼等）
-     */
     private fun cleanText(text: String): String {
         return text
             .replace(Regex("<[^>]+>"), "")
@@ -310,9 +310,6 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
             .trim()
     }
 
-    /**
-     * 清理 ASS 文本（移除樣式代碼）
-     */
     private fun cleanAssText(text: String): String {
         return text
             .replace(Regex("\\{[^}]*\\}"), "")
@@ -322,9 +319,6 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
             .trim()
     }
 
-    /**
-     * 格式化時間為 LRC 格式 [mm:ss.xx]
-     */
     private fun formatTimeToLrc(hours: Int, minutes: Int, seconds: Int, milliseconds: Int): String {
         val totalMinutes = hours * 60 + minutes
         val totalSeconds = seconds
@@ -337,9 +331,6 @@ class SubtitleConverter(private val context: Context, private val settings: AppS
         }
     }
 
-    /**
-     * 從毫秒數格式化時間
-     */
     private fun formatTimeFromMilliseconds(milliseconds: Long): String {
         val totalSeconds = milliseconds / 1000
         val minutes = (totalSeconds / 60).toInt()

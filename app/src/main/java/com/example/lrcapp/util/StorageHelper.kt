@@ -50,6 +50,10 @@ object StorageHelper {
         return dir.findFile(fileName) ?: dir.createFile(mimeType, fileName)
     }
 
+    internal fun countSuccessfulResults(results: List<String?>): Int {
+        return results.count { it != null }
+    }
+
     private fun writeBytesToDocument(context: Context, file: DocumentFile, contentBytes: ByteArray): Boolean {
         return context.contentResolver.openOutputStream(file.uri)?.use { outputStream ->
             outputStream.write(contentBytes)
@@ -58,10 +62,6 @@ object StorageHelper {
         } ?: false
     }
 
-    /**
-     * 保存 LRC 文件
-     * @return Saved file name, or null on failure
-     */
     fun saveLrcFile(context: Context, outputDirUri: Uri?, fileName: String, content: String): String? {
         return if (outputDirUri != null) {
             saveContentToUri(context, outputDirUri, fileName, "application/octet-stream", content.toByteArray(Charsets.UTF_8))
@@ -86,10 +86,6 @@ object StorageHelper {
         return "字幕轉換_$timestamp.zip"
     }
 
-    /**
-     * 保存多個文件為 ZIP
-     * @return Saved ZIP file name, or null on failure
-     */
     fun saveAsZip(context: Context, outputDirUri: Uri?, files: List<Pair<String, String>>, zipFileName: String): String? {
         if (outputDirUri != null) {
             return try {
@@ -131,32 +127,26 @@ object StorageHelper {
         }
     }
 
-    /**
-     * 批量保存文件（不壓縮）
-     * @return Number of successfully saved files
-     */
     fun saveMultipleFiles(context: Context, outputDirUri: Uri?, files: List<Pair<String, String>>): Int {
-        var savedCount = 0
         if (outputDirUri != null) {
-            files.forEach { (fileName, content) ->
-                val result = saveContentToUri(context, outputDirUri, fileName, "application/octet-stream", content.toByteArray(Charsets.UTF_8))
-                if (result != null) {
-                    savedCount++
-                }
+            val results = files.map { (fileName, content) ->
+                saveContentToUri(context, outputDirUri, fileName, "application/octet-stream", content.toByteArray(Charsets.UTF_8))
             }
-        } else {
-            val downloadDir = getDownloadDirectory(context)
-            if (!downloadDir.exists()) {
-                downloadDir.mkdirs()
-            }
-            for ((fileName, content) in files) {
-                try {
-                    val file = File(downloadDir, fileName)
-                    FileOutputStream(file).use { it.write(content.toByteArray(Charsets.UTF_8)) }
-                    savedCount++
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
+            return countSuccessfulResults(results)
+        }
+
+        var savedCount = 0
+        val downloadDir = getDownloadDirectory(context)
+        if (!downloadDir.exists()) {
+            downloadDir.mkdirs()
+        }
+        for ((fileName, content) in files) {
+            try {
+                val file = File(downloadDir, fileName)
+                FileOutputStream(file).use { it.write(content.toByteArray(Charsets.UTF_8)) }
+                savedCount++
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
         }
         return savedCount

@@ -33,6 +33,13 @@ class StorageHelperTest {
         assertEquals("song.lrc", created?.name)
     }
 
+    @Test
+    fun countSuccessfulResultsOnlyCountsNonNullEntries() {
+        val savedCount = StorageHelper.countSuccessfulResults(listOf("a.lrc", null, "b.lrc", null))
+
+        assertEquals(2, savedCount)
+    }
+
     private class FakeDocumentFile(
         private val displayName: String,
         private val directory: Boolean,
