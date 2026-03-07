@@ -2,6 +2,12 @@
 
 一個功能完整的 Android 字幕轉換應用程式，支持將多種字幕格式（VTT, ASS, SSA, SRT, STR, SMI, SUB）轉換為 LRC 格式。
 
+## 開發文件索引
+
+- [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md) - 主開發路線圖與目前狀態
+- [REVIEW_FINDINGS_PLAN.md](./REVIEW_FINDINGS_PLAN.md) - code review findings 的歷史決策背景
+- [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md) - Android 版本差異與 Phase 2 驗證記錄
+- [PHASE3_TEST_HARDENING.md](./PHASE3_TEST_HARDENING.md) - 測試補強、執行鏈路與阻塞
 ## Android Studio 安裝與使用教學
 
 請先閱讀：`ANDROID_STUDIO_GUIDE.md`
@@ -242,3 +248,5 @@ lrcapp/
 - **設置選項**：目前「智能命名清理」和「時間精度優化」在代碼中硬編碼為 `true`，沒有 UI 開關可調整（但轉換引擎仍會根據這些設置工作）。
 - **文件導出方式**：轉換完成後會自動保存所有成功轉換的文件，不提供單個下載或 ZIP 打包選項（簡化用戶操作流程）。
 - **文件列表管理**：選擇新文件時會清空舊列表，不支援追加文件到現有列表。
+
+

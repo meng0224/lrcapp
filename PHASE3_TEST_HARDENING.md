@@ -1,10 +1,10 @@
 # Phase 3 Test Hardening
 
-本文件整理目前 Phase 3 的測試補強範圍，包含自動化測試、最小 instrumentation 驗證範圍，以及手動 QA checklist。
+本文件只負責記錄 Phase 3 的測試資產、執行方式、阻塞與後續 instrumentation 範圍。當前 phase 狀態請看 [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)。Phase 2 的手動驗證與裝置結果請看 [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md)。
 
-## 1. Unit Test Coverage
+## 1. Test Assets Added
 
-### 已補上的測試
+### Unit tests already added
 
 - `FileStatusTest`
   - `INVALID` 不可進入轉換
@@ -31,7 +31,44 @@
   - 缺少 document 時建立新檔
   - 成功統計只計算非 `null` 結果
 
-### 下一步可擴充的 unit tests
+### Instrumentation tests already added
+
+- `MainActivityInstrumentationTest`
+  - 冷啟動可顯示主畫面主要 UI，不受全域權限流程阻塞
+
+## 2. Execution Commands
+
+### Unit tests
+
+- `set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`
+- `set GRADLE_USER_HOME=D:\Git\lrcapp\.gradle-user`
+- `gradlew.bat testDebugUnitTest`
+
+### Instrumentation tests
+
+- `set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`
+- `set GRADLE_USER_HOME=D:\Git\lrcapp\.gradle-user`
+- `gradlew.bat connectedDebugAndroidTest`
+
+## 3. Current Blockers
+
+### Unit test execution
+
+- Status: `BLOCKED`
+- Blocking reason:
+  - Gradle wrapper still attempts to download `gradle-9.0-milestone-1-bin.zip`
+  - Current environment blocks outbound network access
+
+### Instrumentation execution
+
+- Status: `BLOCKED`
+- Blocking reason:
+  - No available device / emulator in this environment
+  - Same Gradle wrapper / network constraint applies before execution
+
+## 4. Next Test Gaps
+
+### Unit test gaps
 
 - `SubtitleConverter`
   - `STR` 與 `SUB` 共用邏輯的額外案例
@@ -41,67 +78,13 @@
   - 非 SAF 路徑的保存成功數
   - ZIP 輸出的成功與失敗回報
 
-## 2. Minimal Instrumentation Scope
+### Instrumentation next target
 
-這一輪不追求完整 UI 自動化，先定義最小可行驗證路徑：
+1. `MainActivity` 冷啟動不跳額外權限流程
+2. SAF 目錄選取後 UI 文案更新
+3. 成功轉換後寫出一個檔案到 SAF 目錄
 
-1. `MainActivity` 在 Android 11+ 冷啟動時不主動跳全域權限流程
-2. 選定 SAF 目錄後，可取得 persistable URI permission 並更新輸出位置顯示
-3. 若條件允許，再補一條「成功轉換後寫出一個檔案到 SAF 目錄」的整合驗證
+## 5. Notes
 
-### 建議落地順序
-
-1. 先做 `MainActivity` 冷啟動不跳額外權限的驗證
-2. 再做 SAF 目錄選取後 UI 文案更新的驗證
-3. 最後才考慮實際寫檔的 instrumentation
-
-## 3. Manual QA Checklist
-
-### Android 11+
-
-- 冷啟動 App
-  - 不出現 all-files-access 導頁
-- 點選「選擇文件」
-  - 可直接開啟系統文件選擇器
-- 選擇一個合法 SRT/VTT/ASS 檔案
-  - 檔案進入 `待處理`
-- 點選「選擇目錄」並選取 SAF 目錄
-  - UI 顯示 `SAF 授權目錄`
-- 點選「開始轉換」
-  - 成功完成轉換與保存
-- 重新轉換同名檔案
-  - 不先刪掉舊檔
-
-### Android 7~10
-
-- 冷啟動 App
-  - 不主動請求權限
-- 點選「選擇文件」
-  - 第一次會要求 `READ_EXTERNAL_STORAGE`
-- 授權後再次選檔
-  - 可正常開啟系統文件選擇器
-- 完成一次合法檔案轉換
-  - 可正常保存到預設應用下載目錄或 SAF 目錄
-
-### 驗證與回歸
-
-- 選入 `.txt` 或其他不支援格式
-  - 狀態維持 `無效`
-- 選入超過 `10MB` 檔案
-  - 狀態維持 `無效`
-- ASS/SSA 文本含逗號
-  - 輸出內容不截斷
-- SRT/VTT 含多行文字
-  - 合併為單行輸出
-
-## 4. Environment Notes
-
-目前這個環境尚未跑通 `testDebugUnitTest`，阻塞點為：
-
-- `JAVA_HOME` 需要指到可用 JDK / JBR
-- Gradle wrapper 下載受網路限制影響
-
-因此本階段交付包含：
-- 測試檔與可測 helper API 已補齊
-- instrumentation 範圍已定義
-- 手動 QA checklist 已整理
+- 本文件不再重複手動 QA checklist；裝置驗證與回歸項目統一記錄於 [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md)
+- 若後續要補更大範圍的 UI 自動化，請另開新文件，不把本文件擴張成總路線圖
