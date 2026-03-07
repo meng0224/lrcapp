@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,6 +23,7 @@ import com.example.lrcapp.model.AppSettings
 import com.example.lrcapp.model.FileStatus
 import com.example.lrcapp.model.SubtitleFile
 import com.example.lrcapp.model.isEligibleForConversion
+import com.example.lrcapp.util.FileListUiPolicy
 import com.example.lrcapp.util.FileNameHelper
 import com.example.lrcapp.util.FileSelectionPolicy
 import com.example.lrcapp.util.FileValidator
@@ -30,8 +32,8 @@ import com.example.lrcapp.util.SettingsManager
 import com.example.lrcapp.util.StorageHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvOutputDir: TextView
     private lateinit var btnSelectOutputDir: MaterialButton
     private lateinit var btnClearOutputDir: MaterialButton
+    private lateinit var btnClearFileList: MaterialButton
     private lateinit var switchOutputToSourceDirectory: SwitchMaterial
     private lateinit var toolbar: MaterialToolbar
 
@@ -97,6 +100,7 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
         setupRecyclerView()
         setupClickListeners()
+        updateClearFileListButtonState()
     }
 
     private fun initViews() {
@@ -111,6 +115,7 @@ class MainActivity : AppCompatActivity() {
         tvOutputDir = findViewById(R.id.tvOutputDir)
         btnSelectOutputDir = findViewById(R.id.btnSelectOutputDir)
         btnClearOutputDir = findViewById(R.id.btnClearOutputDir)
+        btnClearFileList = findViewById(R.id.btnClearFileList)
         switchOutputToSourceDirectory = findViewById(R.id.switchOutputToSourceDirectory)
     }
 
@@ -122,6 +127,7 @@ class MainActivity : AppCompatActivity() {
         }
         syncSourceDirectorySwitch()
         updateOutputDirDisplay()
+        updateClearFileListButtonState()
     }
 
     private fun syncSourceDirectorySwitch() {
@@ -162,6 +168,10 @@ class MainActivity : AppCompatActivity() {
         btnClearOutputDir.setOnClickListener {
             clearCustomOutputDirectory()
         }
+
+        btnClearFileList.setOnClickListener {
+            clearFileList()
+        }
     }
 
     private fun handleSourceDirectoryToggle(enable: Boolean) {
@@ -187,6 +197,27 @@ class MainActivity : AppCompatActivity() {
         SettingsManager.saveSettings(this, settings)
         updateOutputDirDisplay()
         Toast.makeText(this, "已清除自訂輸出資料夾", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun clearFileList() {
+        if (files.isEmpty()) {
+            updateClearFileListButtonState()
+            return
+        }
+
+        files.clear()
+        adapter.notifyDataSetChanged()
+        resetPendingSourceSaveState()
+        progressBar.progress = 0
+        progressBar.visibility = View.GONE
+        tvProgress.text = "進度: 0%"
+        tvProgress.visibility = View.GONE
+        updateClearFileListButtonState()
+        Toast.makeText(this, "已清除文件列表", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateClearFileListButtonState() {
+        btnClearFileList.isEnabled = FileListUiPolicy.canClearFileList(files.size)
     }
 
     private fun checkAndRequestImportPermission() {
@@ -249,6 +280,7 @@ class MainActivity : AppCompatActivity() {
                 files.clear()
                 files.addAll(mergeResult.files)
                 adapter.notifyDataSetChanged()
+                updateClearFileListButtonState()
 
                 val message = if (settings.outputToSourceDirectory) {
                     "已新增 ${mergeResult.addedCount} 個文件，略過 ${mergeResult.skippedDuplicateCount} 個重複文件"
@@ -289,14 +321,14 @@ class MainActivity : AppCompatActivity() {
     private fun startConversion() {
         settings = SettingsManager.loadSettings(this)
         progressBar.progress = 0
-        progressBar.visibility = android.view.View.VISIBLE
-        tvProgress.visibility = android.view.View.VISIBLE
+        progressBar.visibility = View.VISIBLE
+        tvProgress.visibility = View.VISIBLE
 
         val filesToProcess = files.filter { it.status.isEligibleForConversion() }
         if (filesToProcess.isEmpty()) {
             Toast.makeText(this, "沒有可轉換的文件", Toast.LENGTH_SHORT).show()
-            progressBar.visibility = android.view.View.GONE
-            tvProgress.visibility = android.view.View.GONE
+            progressBar.visibility = View.GONE
+            tvProgress.visibility = View.GONE
             return
         }
 
@@ -344,8 +376,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             withContext(Dispatchers.Main) {
-                progressBar.visibility = android.view.View.GONE
-                tvProgress.visibility = android.view.View.GONE
+                progressBar.visibility = View.GONE
+                tvProgress.visibility = View.GONE
                 val successCount = files.count { it.status == FileStatus.SUCCESS }
                 if (successCount > 0) {
                     downloadAllFiles()
@@ -653,5 +685,3 @@ class MainActivity : AppCompatActivity() {
         val content: String
     )
 }
-
-
