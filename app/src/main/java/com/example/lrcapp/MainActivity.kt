@@ -32,7 +32,9 @@ import com.example.lrcapp.util.SettingsManager
 import com.example.lrcapp.util.StorageHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,19 +44,36 @@ import java.util.ArrayDeque
 class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: SubtitleFileAdapter
+    private lateinit var rootLayout: View
+    private lateinit var authBannerCard: MaterialCardView
+    private lateinit var progressCard: MaterialCardView
     private lateinit var progressBar: LinearProgressIndicator
     private lateinit var tvProgress: TextView
+    private lateinit var tvProgressCount: TextView
     private lateinit var btnSelectFiles: MaterialButton
     private lateinit var btnConvert: MaterialButton
+    private lateinit var btnAuthorizeSourceDir: MaterialButton
     private lateinit var tvOutputDir: TextView
+    private lateinit var tvOutputDirHint: TextView
+    private lateinit var tvStorageModeChip: TextView
+    private lateinit var tvAuthBannerMessage: TextView
+    private lateinit var tvFileListTitle: TextView
+    private lateinit var tvFileSummary: TextView
     private lateinit var btnSelectOutputDir: MaterialButton
     private lateinit var btnClearOutputDir: MaterialButton
     private lateinit var btnClearFileList: MaterialButton
     private lateinit var switchOutputToSourceDirectory: SwitchMaterial
     private lateinit var toolbar: MaterialToolbar
+    private lateinit var emptyStateContainer: View
+    private lateinit var secondaryActionsRow: View
+    private lateinit var layoutCustomOutputActions: View
+    private lateinit var bottomActionsCard: View
 
     private val files = mutableListOf<SubtitleFile>()
     private var settings = AppSettings()
+    private var isConversionInProgress = false
+    private var conversionProcessedCount = 0
+    private var conversionTotalCount = 0
 
     private val pendingSourceAuthorizationKeys = ArrayDeque<String>()
     private val pendingSourceAuthorizationLabels = mutableMapOf<String, String>()
@@ -77,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         if (permissions.values.all { it }) {
             openFilePicker()
         } else {
-            Toast.makeText(this, "未授予讀取外部儲存的權限", Toast.LENGTH_SHORT).show()
+            showSystemToast("未授予讀取外部儲存的權限")
         }
     }
 
@@ -100,23 +119,37 @@ class MainActivity : AppCompatActivity() {
         loadSettings()
         setupRecyclerView()
         setupClickListeners()
-        updateClearFileListButtonState()
+        updateUiState()
     }
 
     private fun initViews() {
+        rootLayout = findViewById(R.id.rootLayout)
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
         recyclerView = findViewById(R.id.recyclerView)
+        authBannerCard = findViewById(R.id.authBannerCard)
+        progressCard = findViewById(R.id.progressCard)
         progressBar = findViewById(R.id.progressBar)
         tvProgress = findViewById(R.id.tvProgress)
+        tvProgressCount = findViewById(R.id.tvProgressCount)
         btnSelectFiles = findViewById(R.id.btnSelectFiles)
         btnConvert = findViewById(R.id.btnConvert)
+        btnAuthorizeSourceDir = findViewById(R.id.btnAuthorizeSourceDir)
         tvOutputDir = findViewById(R.id.tvOutputDir)
+        tvOutputDirHint = findViewById(R.id.tvOutputDirHint)
+        tvStorageModeChip = findViewById(R.id.tvStorageModeChip)
+        tvAuthBannerMessage = findViewById(R.id.tvAuthBannerMessage)
+        tvFileListTitle = findViewById(R.id.tvFileListTitle)
+        tvFileSummary = findViewById(R.id.tvFileSummary)
         btnSelectOutputDir = findViewById(R.id.btnSelectOutputDir)
         btnClearOutputDir = findViewById(R.id.btnClearOutputDir)
         btnClearFileList = findViewById(R.id.btnClearFileList)
         switchOutputToSourceDirectory = findViewById(R.id.switchOutputToSourceDirectory)
+        emptyStateContainer = findViewById(R.id.emptyStateContainer)
+        secondaryActionsRow = findViewById(R.id.secondaryActionsRow)
+        layoutCustomOutputActions = findViewById(R.id.layoutCustomOutputActions)
+        bottomActionsCard = findViewById(R.id.bottomActionsCard)
     }
 
     private fun loadSettings() {
@@ -126,8 +159,6 @@ class MainActivity : AppCompatActivity() {
             SettingsManager.saveSettings(this, settings)
         }
         syncSourceDirectorySwitch()
-        updateOutputDirDisplay()
-        updateClearFileListButtonState()
     }
 
     private fun syncSourceDirectorySwitch() {
@@ -145,21 +176,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
+        btnConvert.setOnClickListener {
+            if (files.isEmpty()) {
+                checkAndRequestImportPermission()
+            } else {
+                startConversion()
+            }
+        }
+
         btnSelectFiles.setOnClickListener {
             checkAndRequestImportPermission()
         }
 
-        btnConvert.setOnClickListener {
-            if (files.isEmpty()) {
-                Toast.makeText(this, "請先選擇文件", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            startConversion()
-        }
-
         btnSelectOutputDir.setOnClickListener {
             if (!OutputSettingsPolicy.canSelectCustomOutputDirectory(settings)) {
-                Toast.makeText(this, "已開啟輸出到原文件目錄，請先關閉其中一項", Toast.LENGTH_SHORT).show()
+                showSystemToast("已開啟輸出到原文件目錄，請先關閉其中一項")
                 return@setOnClickListener
             }
             directoryPickerLauncher.launch(null)
@@ -172,11 +203,17 @@ class MainActivity : AppCompatActivity() {
         btnClearFileList.setOnClickListener {
             clearFileList()
         }
+
+        btnAuthorizeSourceDir.setOnClickListener {
+            if (currentSourceAuthorizationKey != null) {
+                directoryPickerLauncher.launch(null)
+            }
+        }
     }
 
     private fun handleSourceDirectoryToggle(enable: Boolean) {
         if (enable && !OutputSettingsPolicy.canEnableSourceDirectoryOutput(settings)) {
-            Toast.makeText(this, "已設定自訂輸出資料夾，請先清除或關閉其中一項", Toast.LENGTH_SHORT).show()
+            showSystemToast("已設定自訂輸出資料夾，請先清除或關閉其中一項")
             syncSourceDirectorySwitch()
             return
         }
@@ -184,40 +221,35 @@ class MainActivity : AppCompatActivity() {
         settings.outputToSourceDirectory = enable
         SettingsManager.saveSettings(this, settings)
         syncSourceDirectorySwitch()
-        updateOutputDirDisplay()
+        updateUiState()
     }
 
     private fun clearCustomOutputDirectory() {
         if (settings.outputDirUri == null) {
-            Toast.makeText(this, "目前沒有自訂輸出資料夾", Toast.LENGTH_SHORT).show()
+            showSystemToast("目前沒有自訂輸出資料夾")
             return
         }
 
         settings.outputDirUri = null
         SettingsManager.saveSettings(this, settings)
-        updateOutputDirDisplay()
-        Toast.makeText(this, "已清除自訂輸出資料夾", Toast.LENGTH_SHORT).show()
+        updateUiState()
+        showFeedback("已清除自訂輸出資料夾")
     }
 
     private fun clearFileList() {
         if (files.isEmpty()) {
-            updateClearFileListButtonState()
+            updateUiState()
             return
         }
 
         files.clear()
         adapter.notifyDataSetChanged()
         resetPendingSourceSaveState()
-        progressBar.progress = 0
-        progressBar.visibility = View.GONE
-        tvProgress.text = "進度: 0%"
-        tvProgress.visibility = View.GONE
-        updateClearFileListButtonState()
-        Toast.makeText(this, "已清除文件列表", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun updateClearFileListButtonState() {
-        btnClearFileList.isEnabled = FileListUiPolicy.canClearFileList(files.size)
+        isConversionInProgress = false
+        conversionProcessedCount = 0
+        conversionTotalCount = 0
+        updateUiState()
+        showFeedback("已清除文件列表")
     }
 
     private fun checkAndRequestImportPermission() {
@@ -239,7 +271,7 @@ class MainActivity : AppCompatActivity() {
         try {
             filePickerLauncher.launch(mimeTypes)
         } catch (e: Exception) {
-            Toast.makeText(this, "無法打開文件選擇器: ${e.message}", Toast.LENGTH_SHORT).show()
+            showSystemToast("無法打開文件選擇器: ${e.message}")
         }
     }
 
@@ -280,14 +312,14 @@ class MainActivity : AppCompatActivity() {
                 files.clear()
                 files.addAll(mergeResult.files)
                 adapter.notifyDataSetChanged()
-                updateClearFileListButtonState()
+                updateUiState()
 
                 val message = if (settings.outputToSourceDirectory) {
                     "已新增 ${mergeResult.addedCount} 個文件，略過 ${mergeResult.skippedDuplicateCount} 個重複文件"
                 } else {
                     "已選擇 ${newFiles.size} 個文件"
                 }
-                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+                showFeedback(message)
             }
         }
     }
@@ -320,17 +352,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun startConversion() {
         settings = SettingsManager.loadSettings(this)
-        progressBar.progress = 0
-        progressBar.visibility = View.VISIBLE
-        tvProgress.visibility = View.VISIBLE
 
         val filesToProcess = files.filter { it.status.isEligibleForConversion() }
         if (filesToProcess.isEmpty()) {
-            Toast.makeText(this, "沒有可轉換的文件", Toast.LENGTH_SHORT).show()
-            progressBar.visibility = View.GONE
-            tvProgress.visibility = View.GONE
+            showFeedback("沒有可轉換的文件")
             return
         }
+
+        isConversionInProgress = true
+        conversionProcessedCount = 0
+        conversionTotalCount = filesToProcess.size
+        progressBar.progress = 0
+        tvProgress.text = "正在處理文件..."
+        updateUiState()
 
         lifecycleScope.launch(Dispatchers.IO) {
             val converter = SubtitleConverter(this@MainActivity, settings)
@@ -343,6 +377,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     files[fileIndex].status = FileStatus.PROCESSING
                     adapter.updateFile(fileIndex, files[fileIndex])
+                    updateUiState()
                 }
 
                 try {
@@ -355,6 +390,7 @@ class MainActivity : AppCompatActivity() {
                             files[fileIndex].lrcContent = lrcContent
                             files[fileIndex].errorMessage = null
                             adapter.updateFile(fileIndex, files[fileIndex])
+                            updateUiState()
                         }
                     } else {
                         throw IllegalStateException("解析錯誤或內容為空")
@@ -364,29 +400,31 @@ class MainActivity : AppCompatActivity() {
                         files[fileIndex].status = FileStatus.ERROR
                         files[fileIndex].errorMessage = "轉換失敗: ${e.message}"
                         adapter.updateFile(fileIndex, files[fileIndex])
+                        updateUiState()
                     }
                 }
 
                 processedCount++
                 val progress = (processedCount * 100) / filesToProcess.size
                 withContext(Dispatchers.Main) {
+                    conversionProcessedCount = processedCount
                     progressBar.progress = progress
-                    tvProgress.text = "進度: $progress%"
+                    tvProgress.text = "正在處理文件... $progress%"
+                    updateUiState()
                 }
             }
 
             withContext(Dispatchers.Main) {
-                progressBar.visibility = View.GONE
-                tvProgress.visibility = View.GONE
+                isConversionInProgress = false
+                conversionProcessedCount = processedCount
+                updateUiState()
+
                 val successCount = files.count { it.status == FileStatus.SUCCESS }
                 if (successCount > 0) {
                     downloadAllFiles()
+                } else {
+                    showFeedback("轉換完成，未產生可保存文件")
                 }
-                Toast.makeText(
-                    this@MainActivity,
-                    "轉換完成！成功: $successCount / ${filesToProcess.size}",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
         }
     }
@@ -396,7 +434,7 @@ class MainActivity : AppCompatActivity() {
             it.status == FileStatus.SUCCESS && it.lrcContent != null && it.outputFileName != null
         }
         if (successFiles.isEmpty()) {
-            Toast.makeText(this, "沒有可導出的文件", Toast.LENGTH_SHORT).show()
+            showFeedback("沒有可導出的文件")
             return
         }
 
@@ -410,7 +448,7 @@ class MainActivity : AppCompatActivity() {
             val outputDirUri = settings.outputDirUri?.let(Uri::parse)
             val savedFiles = StorageHelper.saveMultipleFiles(this@MainActivity, outputDirUri, filesToSave)
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, "已保存 $savedFiles 個文件", Toast.LENGTH_SHORT).show()
+                showFeedback("已保存 $savedFiles 個文件")
             }
         }
     }
@@ -470,26 +508,28 @@ class MainActivity : AppCompatActivity() {
     private fun requestNextSourceDirectoryAuthorization() {
         if (pendingSourceAuthorizationKeys.isEmpty()) {
             currentSourceAuthorizationKey = null
+            updateUiState()
             savePendingSourceTargets()
             return
         }
 
         currentSourceAuthorizationKey = pendingSourceAuthorizationKeys.removeFirst()
         val label = pendingSourceAuthorizationLabels[currentSourceAuthorizationKey] ?: "來源目錄"
-        Toast.makeText(this, "請授權來源目錄：$label", Toast.LENGTH_SHORT).show()
-        directoryPickerLauncher.launch(null)
+        updateUiState()
+        showFeedback("請授權來源目錄：$label")
     }
 
     private fun handleSourceDirectoryAuthorizationResult(sourceDirectoryKey: String, treeUri: Uri?) {
         if (treeUri == null) {
             markPendingOutputsForSourceDirectory(sourceDirectoryKey, "保存失敗: 未授權來源目錄")
             currentSourceAuthorizationKey = null
+            updateUiState()
             requestNextSourceDirectoryAuthorization()
             return
         }
 
         if (!matchesSourceDirectoryKey(treeUri, sourceDirectoryKey)) {
-            Toast.makeText(this, "選取的目錄與來源目錄不符，請重新選擇", Toast.LENGTH_SHORT).show()
+            showSystemToast("選取的目錄與來源目錄不符，請重新選擇")
             directoryPickerLauncher.launch(null)
             return
         }
@@ -501,6 +541,7 @@ class MainActivity : AppCompatActivity() {
         SettingsManager.saveSourceDirectoryUri(this, sourceDirectoryKey, treeUri.toString())
         movePendingOutputsToReadyTargets(sourceDirectoryKey, treeUri)
         currentSourceAuthorizationKey = null
+        updateUiState()
         requestNextSourceDirectoryAuthorization()
     }
 
@@ -583,7 +624,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             "已保存 $successCount 個文件"
         }
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        showFeedback(message)
+        updateUiState()
     }
 
     private fun resetPendingSourceSaveState() {
@@ -602,22 +644,129 @@ class MainActivity : AppCompatActivity() {
         )
         settings.outputDirUri = uri.toString()
         SettingsManager.saveSettings(this, settings)
+        updateUiState()
+        showFeedback("已設定自訂輸出資料夾")
+    }
+
+    private fun updateUiState() {
         updateOutputDirDisplay()
-        Toast.makeText(this, "已設定自訂輸出資料夾", Toast.LENGTH_SHORT).show()
+        updateAuthorizationBanner()
+        updateProgressSection()
+        updateFileListSection()
+        updateActionButtons()
     }
 
     private fun updateOutputDirDisplay() {
         val uriString = settings.outputDirUri
-        tvOutputDir.text = when {
-            settings.outputToSourceDirectory -> "儲存位置: 原文件目錄（逐目錄授權）"
-            uriString != null -> {
-                val uri = Uri.parse(uriString)
-                val docFile = DocumentFile.fromTreeUri(this, uri)
-                "儲存位置: ${docFile?.name ?: "未命名目錄"}（SAF 授權目錄）"
+        val customDirectoryName = uriString?.let(::resolveDirectoryName)
+
+        when {
+            settings.outputToSourceDirectory -> {
+                tvStorageModeChip.text = "原目錄"
+                tvOutputDir.text = getString(R.string.storage_mode_source)
+                tvOutputDirHint.text = "每個文件會保存在其來源資料夾，首次寫入需要逐目錄授權。"
+                layoutCustomOutputActions.visibility = View.GONE
             }
-            else -> "儲存位置: 預設應用下載目錄"
+            uriString != null -> {
+                tvStorageModeChip.text = "自訂"
+                tvOutputDir.text = getString(R.string.storage_mode_custom)
+                tvOutputDirHint.text = customDirectoryName ?: "已授權目錄"
+                layoutCustomOutputActions.visibility = View.VISIBLE
+                btnSelectOutputDir.text = "變更目錄"
+            }
+            else -> {
+                tvStorageModeChip.text = "預設"
+                tvOutputDir.text = getString(R.string.storage_mode_default)
+                tvOutputDirHint.text = "/storage/emulated/0/Download"
+                layoutCustomOutputActions.visibility = View.VISIBLE
+                btnSelectOutputDir.text = "選擇目錄"
+            }
         }
+
         btnClearOutputDir.isEnabled = settings.outputDirUri != null
+    }
+
+    private fun updateAuthorizationBanner() {
+        val key = currentSourceAuthorizationKey
+        if (key == null) {
+            authBannerCard.visibility = View.GONE
+            return
+        }
+
+        val label = pendingSourceAuthorizationLabels[key] ?: "來源目錄"
+        tvAuthBannerMessage.text = "首次寫入「$label」時需要授權，授權後會重用此來源目錄權限。"
+        authBannerCard.visibility = View.VISIBLE
+    }
+
+    private fun updateProgressSection() {
+        if (!isConversionInProgress || conversionTotalCount <= 0) {
+            progressCard.visibility = View.GONE
+            return
+        }
+
+        progressCard.visibility = View.VISIBLE
+        tvProgressCount.text = "$conversionProcessedCount/$conversionTotalCount"
+    }
+
+    private fun updateFileListSection() {
+        val eligibleCount = files.count { it.status.isEligibleForConversion() }
+        tvFileListTitle.text = if (files.isEmpty()) {
+            "文件列表"
+        } else {
+            "文件列表 (${files.size})"
+        }
+        tvFileSummary.text = if (files.isEmpty()) {
+            ""
+        } else {
+            "$eligibleCount 個可轉換"
+        }
+
+        emptyStateContainer.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
+        recyclerView.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun updateActionButtons() {
+        val eligibleCount = files.count { it.status.isEligibleForConversion() }
+        btnClearFileList.isEnabled = FileListUiPolicy.canClearFileList(files.size)
+
+        if (isConversionInProgress) {
+            btnConvert.text = "轉換中..."
+            btnConvert.isEnabled = false
+            secondaryActionsRow.visibility = View.GONE
+            return
+        }
+
+        btnConvert.isEnabled = true
+        if (files.isEmpty()) {
+            btnConvert.text = "選擇文件"
+            secondaryActionsRow.visibility = View.GONE
+            return
+        }
+
+        btnConvert.text = if (eligibleCount > 0) {
+            "開始轉換 ($eligibleCount)"
+        } else {
+            "沒有可轉換的文件"
+        }
+        btnConvert.isEnabled = eligibleCount > 0
+        btnSelectFiles.text = if (settings.outputToSourceDirectory) "新增文件" else "重新選擇"
+        secondaryActionsRow.visibility = View.VISIBLE
+    }
+
+    private fun resolveDirectoryName(uriString: String): String? {
+        val uri = Uri.parse(uriString)
+        val docFile = DocumentFile.fromTreeUri(this, uri)
+        return docFile?.name
+    }
+
+    private fun showFeedback(message: String) {
+        Snackbar.make(rootLayout, message, Snackbar.LENGTH_SHORT)
+            .setAnchorView(bottomActionsCard)
+            .show()
+    }
+
+    private fun showSystemToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun resolveSourceDirectoryInfo(uri: Uri): SourceDirectoryInfo? {
