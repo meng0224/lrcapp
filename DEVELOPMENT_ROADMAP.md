@@ -35,6 +35,7 @@
   - 冷啟動不再主動跳全域權限流程
   - Manifest 移除高風險權限與過時設定
   - README / guide / UI 文案已對齊
+  - 遞迴資料夾匯入開關與匯入根目錄授權模型已落地
 - 未完成：
   - Android 11+ / Android 7~10 的實機或模擬器驗證結果尚未回填
 - 下一步：
@@ -80,23 +81,27 @@
 ### 輸出到原文件目錄與列表交互
 
 - 狀態：`IN PROGRESS`
-- 目標：讓轉換結果可依來源資料夾寫回原文件目錄，並支援多次跨資料夾累積選檔
+- 目標：讓轉換結果可依來源資料夾或匯入根目錄寫回原文件目錄，並支援多次跨資料夾累積匯入
 - 已完成：
   - `AppSettings` / `SettingsManager` 新增 `outputToSourceDirectory`
   - 主畫面新增「輸出到原文件目錄」開關
   - 自訂輸出資料夾與原文件目錄模式互斥
-  - 每個來源資料夾可保存獨立的 SAF tree URI 授權
-  - 原文件目錄模式支援多次選檔追加
+  - 一般單檔匯入可保存來源資料夾的 SAF tree URI 授權
+  - 已完成遞迴資料夾匯入開關
+  - 已完成匯入根目錄授權保存
+  - 已完成子資料夾結構還原輸出
+  - 原文件目錄模式與遞迴匯入模式支援多次追加
   - 重複檔案以 `Uri` 去重
   - 主畫面新增「清除文件列表」按鈕
-  - `StorageHelper` 新增多目標輸出模型與保存結果統計
-  - 已補 `FileSelectionPolicyTest` 與 `FileListUiPolicyTest`
+  - `StorageHelper` 新增多目標輸出模型、保存驗證與檔名改寫防呆
+  - 已補 `FileSelectionPolicyTest`、`FileListUiPolicyTest`、`StorageHelperTest`
 - 未完成：
   - 在可用環境實際編譯並跑通測試
-  - 實機驗證單一來源 / 多來源 / 重用授權流程
+  - 實機驗證單一來源 / 多來源 / 遞迴匯入 / 重用授權流程
   - 驗證清除列表後不殘留舊的待授權/待保存狀態
 - 下一步：
-  - 在 Android 11+ 裝置驗證逐目錄授權與回寫流程
+  - 在 Android 11+ 裝置驗證遞迴匯入、匯入根目錄一次授權與子資料夾回寫流程
+  - 驗證 `.lrc` 檔名不會被 provider 改寫成 `.lrc.txt`
   - 驗證一般模式覆蓋、原文件目錄模式追加、清除列表回到乾淨狀態
 
 ## 3. Current Blockers
@@ -104,14 +109,14 @@
 - `gradlew.bat testDebugUnitTest` 受限於目前環境無法下載 `gradle-9.0-milestone-1-bin.zip`
 - instrumentation 需要可用 emulator / device
 - Phase 2 雖已實作，但尚未完成裝置驗證回填
-- 原文件目錄輸出與列表交互功能尚未在實機上完成完整驗證
+- 原文件目錄輸出、遞迴匯入與保存驗證功能尚未在實機上完成完整驗證
 
 ## 4. Immediate Next Steps
 
 1. 在可提供 Gradle 發行版的環境執行 unit tests
 2. 在可用 emulator / device 執行 instrumentation tests
 3. 依 validation report 完成 Android 11+ 與 Android 7~10 驗證
-4. 驗證原文件目錄模式的單一來源、多來源、授權重用與清除列表流程
+4. 驗證遞迴匯入、匯入根目錄授權重用、檔名維持 `.lrc` 與清除列表流程
 5. 更新各附屬文件中的 `status / passed / blocked` 結果
 
 ## 5. Acceptance Snapshot
@@ -120,4 +125,4 @@
 - Phase 2 完成條件：Android 11+ 與 Android 7~10 驗證結果已回填且通過
 - Phase 3 完成條件：unit tests 與最小 instrumentation 至少各跑通一次
 - Phase 4 開始條件：Phase 2、3 不再處於 `VALIDATION PENDING` / `IN PROGRESS`
-- 新功能完成條件：來源目錄輸出在單一來源、多來源、重複授權重用與清除列表場景都通過手動驗證
+- 新功能完成條件：來源目錄輸出在單一來源、多來源、遞迴匯入、匯入根目錄一次授權、`.lrc` 檔名正確與清除列表場景都通過手動驗證
