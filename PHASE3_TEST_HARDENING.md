@@ -29,11 +29,14 @@
 - `StorageHelperTest`
   - 既有 document 重用
   - 缺少 document 時建立新檔
-  - 成功統計只計算非 `null` 結果
+  - 巢狀子資料夾建立與重用
+  - 保存驗證只在檔案存在且長度正確時視為成功
+  - provider 改寫檔名為 `.lrc.txt` 時視為失敗
   - 多目標輸出成功統計
 - `SettingsManagerTest`
   - `outputToSourceDirectory` 讀值
   - source directory preference key 編碼
+  - 匯入根目錄授權 key 編碼
 - `OutputSettingsPolicyTest`
   - 自訂輸出目錄與原文件目錄模式互斥
 - `FileSelectionPolicyTest`
@@ -41,6 +44,7 @@
   - 同 `Uri` 去重
   - 一般模式覆蓋舊列表
   - 同檔名不同 `Uri` 可共存
+  - 遞迴匯入模式可追加且保留去重邏輯
 - `FileListUiPolicyTest`
   - 空列表時禁用「清除文件列表」按鈕
   - 有列表時啟用「清除文件列表」按鈕
@@ -49,6 +53,7 @@
 
 - `MainActivityInstrumentationTest`
   - 冷啟動可顯示主畫面主要 UI，不受全域權限流程阻塞
+  - 遞迴匯入開關狀態可在冷啟動後恢復
 
 ## 2. Execution Commands
 
@@ -91,17 +96,20 @@
 - `StorageHelper`
   - 非 SAF 路徑的保存成功數
   - ZIP 輸出的成功與失敗回報
+  - 保存結果與實際 `savedFileName` / 相對路徑摘要一致
 - `MainActivity` related logic
   - 清除文件列表後的進度狀態重置
-  - 原文件目錄模式下來源目錄授權失敗後再清除列表的行為
+  - 遞迴匯入根目錄授權失效後重新授權
+  - 非遞迴單檔匯入與遞迴匯入共存回歸
 
 ### Instrumentation next target
 
 1. `MainActivity` 冷啟動不跳額外權限流程
-2. SAF 目錄選取後 UI 文案更新
-3. 原文件目錄模式下多次選檔追加與去重
-4. 成功轉換後寫出一個檔案到 SAF 目錄
-5. 清除文件列表後畫面回到乾淨狀態
+2. 遞迴匯入開關狀態恢復與主按鈕文案更新
+3. 選擇資料夾後匯入列表與保存回饋更新
+4. 原文件目錄模式下遞迴匯入只授權匯入根目錄一次
+5. 成功轉換後寫出一個檔案到對應子資料夾
+6. 清除文件列表後畫面回到乾淨狀態
 
 ## 5. Notes
 

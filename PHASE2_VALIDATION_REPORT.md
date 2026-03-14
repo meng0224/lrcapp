@@ -6,20 +6,26 @@
 
 - Status: `NOT STARTED`
 - Owner:
-- Last Updated: 2026-03-08
+- Last Updated: 2026-03-15
 
 ## 1. Scope
 
 - Android 11+
   - 冷啟動不跳 all-files-access
-  - 可直接選檔
+  - 遞迴匯入關閉時可直接選檔
+  - 遞迴匯入開啟時主入口改為選擇資料夾
   - 可選擇 SAF 目錄並保存
+  - 遞迴匯入搭配原文件目錄輸出時，匯入根目錄只授權一次
+  - 保存後會在對應子資料夾生成 `.lrc`
+  - 不會輸出成 `.lrc.txt`
 - Android 7~10
   - 第一次選檔正確要求 `READ_EXTERNAL_STORAGE`
   - 授權後可正常選檔與保存
+  - 遞迴匯入開啟時可正常選擇資料夾並保存
 - 共通回歸
-  - 無效檔案維持 `INVALID`
+  - 無效檔案維持 `INVALID` 或在遞迴匯入時被略過
   - 同名輸出不先刪舊檔
+  - 保存成功訊息需和實際檔案一致
   - 不影響既有 SAF 匯入與輸出流程
 
 ## 2. Environment
@@ -57,12 +63,18 @@
 ### Android 11+
 
 - [ ] Cold launch does not open all-files-access settings
-- [ ] Tap `選擇文件` opens system document picker directly
-- [ ] Select a valid subtitle file and item enters `待處理`
+- [ ] 遞迴匯入關閉時，點 `選擇文件` 會直接打開系統文件選擇器
+- [ ] 遞迴匯入關閉時，選擇合法字幕檔後項目進入 `待處理`
+- [ ] 遞迴匯入開啟時，點 `選擇資料夾` 會打開系統資料夾選擇器
+- [ ] 遞迴匯入開啟時，匯入根目錄只授權一次
+- [ ] 遞迴匯入時會加入子資料夾中的合法字幕檔，並略過無效檔
 - [ ] Tap `選擇目錄` and select SAF directory
 - [ ] Output directory text shows `SAF 授權目錄`
 - [ ] Tap `開始轉換` and file saves successfully
+- [ ] 原文件目錄輸出下，保存結果會出現在對應子資料夾
+- [ ] 保存檔名維持 `.lrc`，不會變成 `.lrc.txt`
 - [ ] Re-run same output name without deleting previous file first
+- [ ] 保存成功 Snackbar 與實際產生的檔案數一致
 
 ### Android 7~10
 
@@ -70,14 +82,17 @@
 - [ ] First tap on `選擇文件` requests `READ_EXTERNAL_STORAGE`
 - [ ] Grant permission and document picker opens normally
 - [ ] Valid subtitle converts and saves successfully
+- [ ] 遞迴匯入開啟時可正常選擇資料夾、掃描子資料夾與保存
 
 ### Shared regression
 
-- [ ] Unsupported extension becomes `無效`
-- [ ] File larger than `10MB` becomes `無效`
+- [ ] Unsupported extension becomes `無效` in general import mode
+- [ ] File larger than `10MB` becomes `無效` in general import mode
+- [ ] 遞迴匯入時無效檔會被略過，不加入列表
 - [ ] ASS/SSA text with commas remains intact
 - [ ] SRT/VTT multiline text merges correctly
-- [ ] 新增原文件目錄與清除文件列表功能後，不影響原本 SAF 權限與輸出流程
+- [ ] 原文件目錄模式下保存成功訊息需對應實際檔案
+- [ ] 新增原文件目錄、遞迴匯入與清除文件列表功能後，不影響原本 SAF 權限與輸出流程
 
 ## 5. Results
 

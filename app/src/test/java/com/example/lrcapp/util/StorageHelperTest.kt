@@ -16,7 +16,7 @@ class StorageHelperTest {
         val existing = FakeDocumentFile("song.lrc", false, length = 16L)
         dir.children.add(existing)
 
-        val resolved = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "text/plain")
+        val resolved = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "application/octet-stream")
 
         assertSame(existing, resolved)
         assertEquals(0, dir.createFileCalls)
@@ -27,7 +27,7 @@ class StorageHelperTest {
     fun missingDocumentIsCreated() {
         val dir = FakeDocumentFile("dir", true)
 
-        val created = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "text/plain")
+        val created = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "application/octet-stream")
 
         assertTrue(created != null)
         assertEquals(1, dir.createFileCalls)
@@ -90,6 +90,20 @@ class StorageHelperTest {
     }
 
     @Test
+    fun verifySavedFileNameRejectsProviderAppendedTxt() {
+        val result = StorageHelper.verifySavedFileName("song.lrc", "song.lrc.txt")
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun verifySavedFileNameAcceptsExpectedName() {
+        val result = StorageHelper.verifySavedFileName("song.lrc", "song.lrc")
+
+        assertTrue(result)
+    }
+
+    @Test
     fun countSuccessfulResultsOnlyCountsNonNullEntries() {
         val savedCount = StorageHelper.countSuccessfulResults(listOf("a.lrc", null, "b.lrc", null))
 
@@ -115,7 +129,7 @@ class StorageHelperTest {
         val count = StorageHelper.countSuccessfulOutputResults(
             listOf(
                 StorageHelper.OutputResult(successTarget, Uri.parse("content://tree/one/a"), "a.lrc", 16L),
-                StorageHelper.OutputResult(failedTarget, null, null, 0L)
+                StorageHelper.OutputResult(failedTarget, null, "b.lrc.txt", 0L)
             )
         )
 

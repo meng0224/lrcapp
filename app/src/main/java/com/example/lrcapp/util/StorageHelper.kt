@@ -15,6 +15,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 object StorageHelper {
+    private const val LRC_MIME_TYPE = "application/octet-stream"
 
     data class OutputTarget(
         val directoryUri: Uri,
@@ -39,7 +40,10 @@ object StorageHelper {
         val savedUri: Uri?,
         val savedFileName: String?,
         val bytesWritten: Long
-    )
+    ) {
+        val isSuccess: Boolean
+            get() = savedUri != null && savedFileName != null && bytesWritten > 0
+    }
 
     fun getDownloadDirectory(context: Context): File {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -66,13 +70,14 @@ object StorageHelper {
                 return SavedDocumentResult(null, null, 0)
             }
 
-            if (!verifySavedDocument(targetFile, contentBytes.size.toLong())) {
-                return SavedDocumentResult(null, null, 0)
+            val actualFileName = targetFile.name
+            if (!verifySavedDocument(targetFile, contentBytes.size.toLong()) || !verifySavedFileName(fileName, actualFileName)) {
+                return SavedDocumentResult(null, actualFileName, 0)
             }
 
             SavedDocumentResult(
                 savedUri = targetFile.uri,
-                savedFileName = targetFile.name,
+                savedFileName = actualFileName,
                 bytesWritten = contentBytes.size.toLong()
             )
         } catch (e: Exception) {
@@ -111,6 +116,10 @@ object StorageHelper {
         return file.exists() && file.length() >= expectedBytes && expectedBytes > 0
     }
 
+    internal fun verifySavedFileName(expectedFileName: String, actualFileName: String?): Boolean {
+        return actualFileName == expectedFileName
+    }
+
     internal fun countSuccessfulResults(results: List<String?>): Int {
         return results.count { it != null }
     }
@@ -133,9 +142,9 @@ object StorageHelper {
                 context,
                 outputDirUri,
                 fileName,
-                "text/plain",
+                LRC_MIME_TYPE,
                 content.toByteArray(Charsets.UTF_8)
-            ).savedFileName
+            ).savedFileName?.takeIf { verifySavedFileName(fileName, it) }
         } else {
             try {
                 val downloadDir = getDownloadDirectory(context)
@@ -204,7 +213,7 @@ object StorageHelper {
                 context = context,
                 dirUri = target.directoryUri,
                 fileName = target.fileName,
-                mimeType = "text/plain",
+                mimeType = LRC_MIME_TYPE,
                 contentBytes = target.content.toByteArray(Charsets.UTF_8),
                 relativeDirectoryPath = target.relativeDirectoryPath
             )
@@ -224,9 +233,9 @@ object StorageHelper {
                     context,
                     outputDirUri,
                     fileName,
-                    "text/plain",
+                    LRC_MIME_TYPE,
                     content.toByteArray(Charsets.UTF_8)
-                ).savedFileName
+                ).savedFileName?.takeIf { verifySavedFileName(fileName, it) }
             }
             return countSuccessfulResults(results)
         }
