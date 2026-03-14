@@ -3,6 +3,7 @@ package com.example.lrcapp.util
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,10 +13,10 @@ class StorageHelperTest {
     @Test
     fun existingDocumentIsReusedWithoutCreatingReplacement() {
         val dir = FakeDocumentFile("dir", true)
-        val existing = FakeDocumentFile("song.lrc", false)
+        val existing = FakeDocumentFile("song.lrc", false, length = 16L)
         dir.children.add(existing)
 
-        val resolved = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "application/octet-stream")
+        val resolved = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "text/plain")
 
         assertSame(existing, resolved)
         assertEquals(0, dir.createFileCalls)
@@ -26,7 +27,7 @@ class StorageHelperTest {
     fun missingDocumentIsCreated() {
         val dir = FakeDocumentFile("dir", true)
 
-        val created = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "application/octet-stream")
+        val created = StorageHelper.getOrCreateOutputDocument(dir, "song.lrc", "text/plain")
 
         assertTrue(created != null)
         assertEquals(1, dir.createFileCalls)
@@ -62,6 +63,33 @@ class StorageHelperTest {
     }
 
     @Test
+    fun verifySavedDocumentRejectsMissingFile() {
+        val file = FakeDocumentFile("song.lrc", false, exists = false, length = 16L)
+
+        val result = StorageHelper.verifySavedDocument(file, 16L)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun verifySavedDocumentRejectsZeroLengthFile() {
+        val file = FakeDocumentFile("song.lrc", false, length = 0L)
+
+        val result = StorageHelper.verifySavedDocument(file, 16L)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun verifySavedDocumentAcceptsExpectedBytes() {
+        val file = FakeDocumentFile("song.lrc", false, length = 32L)
+
+        val result = StorageHelper.verifySavedDocument(file, 16L)
+
+        assertTrue(result)
+    }
+
+    @Test
     fun countSuccessfulResultsOnlyCountsNonNullEntries() {
         val savedCount = StorageHelper.countSuccessfulResults(listOf("a.lrc", null, "b.lrc", null))
 
@@ -69,7 +97,7 @@ class StorageHelperTest {
     }
 
     @Test
-    fun countSuccessfulOutputResultsOnlyCountsSuccessfulTargets() {
+    fun countSuccessfulOutputResultsOnlyCountsVerifiedTargets() {
         val successTarget = StorageHelper.OutputTarget(
             directoryUri = Uri.parse("content://tree/one"),
             fileName = "a.lrc",
@@ -86,8 +114,8 @@ class StorageHelperTest {
 
         val count = StorageHelper.countSuccessfulOutputResults(
             listOf(
-                StorageHelper.OutputResult(successTarget, "a.lrc"),
-                StorageHelper.OutputResult(failedTarget, null)
+                StorageHelper.OutputResult(successTarget, Uri.parse("content://tree/one/a"), "a.lrc", 16L),
+                StorageHelper.OutputResult(failedTarget, null, null, 0L)
             )
         )
 
@@ -97,7 +125,9 @@ class StorageHelperTest {
     private class FakeDocumentFile(
         private val displayName: String,
         private val directory: Boolean,
-        private val fileType: String? = null
+        private val fileType: String? = null,
+        private val exists: Boolean = true,
+        private val length: Long = 0L
     ) : DocumentFile(null) {
         val children = mutableListOf<FakeDocumentFile>()
         var createFileCalls = 0
@@ -106,7 +136,7 @@ class StorageHelperTest {
 
         override fun createFile(mimeType: String, displayName: String): DocumentFile {
             createFileCalls++
-            return FakeDocumentFile(displayName, false, mimeType).also { children.add(it) }
+            return FakeDocumentFile(displayName, false, mimeType, length = 16L).also { children.add(it) }
         }
 
         override fun createDirectory(displayName: String): DocumentFile {
@@ -128,7 +158,7 @@ class StorageHelperTest {
 
         override fun lastModified(): Long = 0L
 
-        override fun length(): Long = 0L
+        override fun length(): Long = length
 
         override fun canRead(): Boolean = true
 
@@ -139,7 +169,7 @@ class StorageHelperTest {
             return true
         }
 
-        override fun exists(): Boolean = true
+        override fun exists(): Boolean = exists
 
         override fun listFiles(): Array<DocumentFile> = children.toTypedArray()
 

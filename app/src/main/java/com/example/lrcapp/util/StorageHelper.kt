@@ -27,11 +27,19 @@ object StorageHelper {
 
     data class OutputResult(
         val target: OutputTarget,
-        val savedFileName: String?
+        val savedUri: Uri?,
+        val savedFileName: String?,
+        val bytesWritten: Long
     ) {
         val isSuccess: Boolean
-            get() = savedFileName != null
+            get() = savedUri != null && savedFileName != null && bytesWritten > 0
     }
+
+    internal data class SavedDocumentResult(
+        val savedUri: Uri?,
+        val savedFileName: String?,
+        val bytesWritten: Long
+    )
 
     fun getDownloadDirectory(context: Context): File {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -49,19 +57,27 @@ object StorageHelper {
         mimeType: String,
         contentBytes: ByteArray,
         relativeDirectoryPath: String? = null
-    ): String? {
+    ): SavedDocumentResult {
         return try {
-            val dir = DocumentFile.fromTreeUri(context, dirUri) ?: return null
-            val targetDir = resolveTargetDirectory(dir, relativeDirectoryPath) ?: return null
-            val targetFile = getOrCreateOutputDocument(targetDir, fileName, mimeType) ?: return null
-            if (writeBytesToDocument(context, targetFile, contentBytes)) {
-                targetFile.name
-            } else {
-                null
+            val dir = DocumentFile.fromTreeUri(context, dirUri) ?: return SavedDocumentResult(null, null, 0)
+            val targetDir = resolveTargetDirectory(dir, relativeDirectoryPath) ?: return SavedDocumentResult(null, null, 0)
+            val targetFile = getOrCreateOutputDocument(targetDir, fileName, mimeType) ?: return SavedDocumentResult(null, null, 0)
+            if (!writeBytesToDocument(context, targetFile, contentBytes)) {
+                return SavedDocumentResult(null, null, 0)
             }
+
+            if (!verifySavedDocument(targetFile, contentBytes.size.toLong())) {
+                return SavedDocumentResult(null, null, 0)
+            }
+
+            SavedDocumentResult(
+                savedUri = targetFile.uri,
+                savedFileName = targetFile.name,
+                bytesWritten = contentBytes.size.toLong()
+            )
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            SavedDocumentResult(null, null, 0)
         }
     }
 
@@ -91,6 +107,10 @@ object StorageHelper {
         return dir.findFile(fileName) ?: dir.createFile(mimeType, fileName)
     }
 
+    internal fun verifySavedDocument(file: DocumentFile, expectedBytes: Long): Boolean {
+        return file.exists() && file.length() >= expectedBytes && expectedBytes > 0
+    }
+
     internal fun countSuccessfulResults(results: List<String?>): Int {
         return results.count { it != null }
     }
@@ -113,9 +133,9 @@ object StorageHelper {
                 context,
                 outputDirUri,
                 fileName,
-                "application/octet-stream",
+                "text/plain",
                 content.toByteArray(Charsets.UTF_8)
-            )
+            ).savedFileName
         } else {
             try {
                 val downloadDir = getDownloadDirectory(context)
@@ -180,15 +200,20 @@ object StorageHelper {
 
     fun saveOutputTargets(context: Context, targets: List<OutputTarget>): List<OutputResult> {
         return targets.map { target ->
-            val savedFileName = saveContentToUri(
+            val saveResult = saveContentToUri(
                 context = context,
                 dirUri = target.directoryUri,
                 fileName = target.fileName,
-                mimeType = "application/octet-stream",
+                mimeType = "text/plain",
                 contentBytes = target.content.toByteArray(Charsets.UTF_8),
                 relativeDirectoryPath = target.relativeDirectoryPath
             )
-            OutputResult(target, savedFileName)
+            OutputResult(
+                target = target,
+                savedUri = saveResult.savedUri,
+                savedFileName = saveResult.savedFileName,
+                bytesWritten = saveResult.bytesWritten
+            )
         }
     }
 
@@ -199,9 +224,9 @@ object StorageHelper {
                     context,
                     outputDirUri,
                     fileName,
-                    "application/octet-stream",
+                    "text/plain",
                     content.toByteArray(Charsets.UTF_8)
-                )
+                ).savedFileName
             }
             return countSuccessfulResults(results)
         }

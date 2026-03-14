@@ -828,7 +828,7 @@ class MainActivity : AppCompatActivity() {
                 val fileIndex = result.target.fileIndex
                 if (fileIndex in files.indices) {
                     files[fileIndex].status = FileStatus.ERROR
-                    files[fileIndex].errorMessage = "保存失敗: 無法寫入原文件目錄"
+                    files[fileIndex].errorMessage = "保存失敗: ${describeTargetPath(result.target)}"
                     adapter.updateFile(fileIndex, files[fileIndex])
                 }
             }
@@ -836,13 +836,41 @@ class MainActivity : AppCompatActivity() {
 
         val successCount = StorageHelper.countSuccessfulOutputResults(results)
         val failureCount = initialFailures.size + results.count { !it.isSuccess }
-        val message = if (failureCount > 0) {
-            "已保存 $successCount 個文件，失敗 $failureCount 個"
-        } else {
-            "已保存 $successCount 個文件"
+        val firstSuccess = results.firstOrNull { it.isSuccess }
+        val firstFailure = results.firstOrNull { !it.isSuccess }
+        val message = when {
+            successCount == 0 && failureCount > 0 -> {
+                "保存失敗 ($failureCount)：${describeTargetPath(firstFailure?.target)}"
+            }
+            failureCount > 0 -> {
+                "已保存 $successCount 個文件，失敗 $failureCount 個（${describeTargetPath(firstFailure?.target)}）"
+            }
+            successCount == 1 -> {
+                "已保存 1 個文件：${describeSavedPath(firstSuccess)}"
+            }
+            else -> {
+                "已保存 $successCount 個文件"
+            }
         }
         showFeedback(message)
         updateUiState()
+    }
+
+    private fun describeSavedPath(result: StorageHelper.OutputResult?): String {
+        val fileName = result?.savedFileName ?: result?.target?.fileName ?: "未知文件"
+        val relativePath = result?.target?.relativeDirectoryPath
+        return if (relativePath.isNullOrBlank()) fileName else "$relativePath/$fileName"
+    }
+
+    private fun describeTargetPath(target: StorageHelper.OutputTarget?): String {
+        if (target == null) {
+            return "未知文件"
+        }
+        return if (target.relativeDirectoryPath.isNullOrBlank()) {
+            target.fileName
+        } else {
+            "${target.relativeDirectoryPath}/${target.fileName}"
+        }
     }
 
     private fun resetPendingSourceSaveState() {
@@ -1098,3 +1126,4 @@ class MainActivity : AppCompatActivity() {
         IMPORT_ROOT("匯入根目錄")
     }
 }
+
