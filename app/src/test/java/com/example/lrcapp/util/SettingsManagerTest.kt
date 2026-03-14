@@ -56,4 +56,14 @@ class SettingsManagerTest {
             key
         )
     }
+
+    @Test
+    fun importRootDirectoryPreferenceKeyIsStableAndEncoded() {
+        val key = SettingsManager.importRootDirectoryPreferenceKey("com.android.externalstorage.documents|primary:Anime/Subtitles")
+
+        assertEquals(
+            "import_root_directory_uri_com.android.externalstorage.documents%7Cprimary%3AAnime%2FSubtitles",
+            key
+        )
+    }
 }

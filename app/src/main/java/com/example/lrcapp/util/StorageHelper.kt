@@ -21,7 +21,8 @@ object StorageHelper {
         val fileName: String,
         val content: String,
         val fileIndex: Int,
-        val sourceDirectoryKey: String? = null
+        val sourceDirectoryKey: String? = null,
+        val relativeDirectoryPath: String? = null
     )
 
     data class OutputResult(
@@ -46,11 +47,13 @@ object StorageHelper {
         dirUri: Uri,
         fileName: String,
         mimeType: String,
-        contentBytes: ByteArray
+        contentBytes: ByteArray,
+        relativeDirectoryPath: String? = null
     ): String? {
         return try {
             val dir = DocumentFile.fromTreeUri(context, dirUri) ?: return null
-            val targetFile = getOrCreateOutputDocument(dir, fileName, mimeType) ?: return null
+            val targetDir = resolveTargetDirectory(dir, relativeDirectoryPath) ?: return null
+            val targetFile = getOrCreateOutputDocument(targetDir, fileName, mimeType) ?: return null
             if (writeBytesToDocument(context, targetFile, contentBytes)) {
                 targetFile.name
             } else {
@@ -60,6 +63,28 @@ object StorageHelper {
             e.printStackTrace()
             null
         }
+    }
+
+    internal fun resolveTargetDirectory(rootDir: DocumentFile, relativeDirectoryPath: String?): DocumentFile? {
+        if (relativeDirectoryPath.isNullOrBlank()) {
+            return rootDir
+        }
+
+        var currentDir = rootDir
+        relativeDirectoryPath.split('/')
+            .filter { it.isNotBlank() }
+            .forEach { segment ->
+                currentDir = getOrCreateChildDirectory(currentDir, segment) ?: return null
+            }
+        return currentDir
+    }
+
+    internal fun getOrCreateChildDirectory(parentDir: DocumentFile, directoryName: String): DocumentFile? {
+        val existing = parentDir.findFile(directoryName)
+        if (existing != null && existing.isDirectory) {
+            return existing
+        }
+        return parentDir.createDirectory(directoryName)
     }
 
     internal fun getOrCreateOutputDocument(dir: DocumentFile, fileName: String, mimeType: String): DocumentFile? {
@@ -84,7 +109,13 @@ object StorageHelper {
 
     fun saveLrcFile(context: Context, outputDirUri: Uri?, fileName: String, content: String): String? {
         return if (outputDirUri != null) {
-            saveContentToUri(context, outputDirUri, fileName, "application/octet-stream", content.toByteArray(Charsets.UTF_8))
+            saveContentToUri(
+                context,
+                outputDirUri,
+                fileName,
+                "application/octet-stream",
+                content.toByteArray(Charsets.UTF_8)
+            )
         } else {
             try {
                 val downloadDir = getDownloadDirectory(context)
@@ -154,7 +185,8 @@ object StorageHelper {
                 dirUri = target.directoryUri,
                 fileName = target.fileName,
                 mimeType = "application/octet-stream",
-                contentBytes = target.content.toByteArray(Charsets.UTF_8)
+                contentBytes = target.content.toByteArray(Charsets.UTF_8),
+                relativeDirectoryPath = target.relativeDirectoryPath
             )
             OutputResult(target, savedFileName)
         }
@@ -163,7 +195,13 @@ object StorageHelper {
     fun saveMultipleFiles(context: Context, outputDirUri: Uri?, files: List<Pair<String, String>>): Int {
         if (outputDirUri != null) {
             val results = files.map { (fileName, content) ->
-                saveContentToUri(context, outputDirUri, fileName, "application/octet-stream", content.toByteArray(Charsets.UTF_8))
+                saveContentToUri(
+                    context,
+                    outputDirUri,
+                    fileName,
+                    "application/octet-stream",
+                    content.toByteArray(Charsets.UTF_8)
+                )
             }
             return countSuccessfulResults(results)
         }

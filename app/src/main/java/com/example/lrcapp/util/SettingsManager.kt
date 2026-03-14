@@ -11,6 +11,7 @@ object SettingsManager {
     private const val KEY_OUTPUT_TO_SOURCE_DIRECTORY = "output_to_source_directory"
     private const val KEY_RECURSIVE_IMPORT_ENABLED = "recursive_import_enabled"
     private const val KEY_SOURCE_DIRECTORY_URI_PREFIX = "source_directory_uri_"
+    private const val KEY_IMPORT_ROOT_DIRECTORY_URI_PREFIX = "import_root_directory_uri_"
 
     private fun getSharedPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -45,6 +46,16 @@ object SettingsManager {
             .apply()
     }
 
+    fun getImportRootDirectoryUri(context: Context, importRootDirectoryKey: String): String? {
+        return getSharedPreferences(context).getString(importRootDirectoryPreferenceKey(importRootDirectoryKey), null)
+    }
+
+    fun saveImportRootDirectoryUri(context: Context, importRootDirectoryKey: String, treeUri: String) {
+        getSharedPreferences(context).edit()
+            .putString(importRootDirectoryPreferenceKey(importRootDirectoryKey), treeUri)
+            .apply()
+    }
+
     internal fun fromStoredValues(
         outputDirUri: String?,
         outputToSourceDirectory: Boolean,
@@ -61,5 +72,9 @@ object SettingsManager {
 
     internal fun sourceDirectoryPreferenceKey(sourceDirectoryKey: String): String {
         return KEY_SOURCE_DIRECTORY_URI_PREFIX + Uri.encode(sourceDirectoryKey)
+    }
+
+    internal fun importRootDirectoryPreferenceKey(importRootDirectoryKey: String): String {
+        return KEY_IMPORT_ROOT_DIRECTORY_URI_PREFIX + Uri.encode(importRootDirectoryKey)
     }
 }

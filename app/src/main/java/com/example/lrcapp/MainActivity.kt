@@ -76,12 +76,13 @@ class MainActivity : AppCompatActivity() {
     private var conversionProcessedCount = 0
     private var conversionTotalCount = 0
 
-    private val pendingSourceAuthorizationKeys = ArrayDeque<String>()
-    private val pendingSourceAuthorizationLabels = mutableMapOf<String, String>()
+    private val pendingAuthorizationKeys = ArrayDeque<String>()
+    private val pendingAuthorizationLabels = mutableMapOf<String, String>()
+    private val pendingAuthorizationModes = mutableMapOf<String, AuthorizationMode>()
     private val pendingSourceReadyTargets = mutableListOf<StorageHelper.OutputTarget>()
     private val pendingSourceOutputs = mutableListOf<PendingSourceOutput>()
     private val pendingSourceSaveFailures = mutableMapOf<Int, String>()
-    private var currentSourceAuthorizationKey: String? = null
+    private var currentAuthorizationKey: String? = null
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -104,9 +105,9 @@ class MainActivity : AppCompatActivity() {
     private val directoryPickerLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
-        val sourceAuthorizationKey = currentSourceAuthorizationKey
-        if (sourceAuthorizationKey != null) {
-            handleSourceDirectoryAuthorizationResult(sourceAuthorizationKey, uri)
+        val authorizationKey = currentAuthorizationKey
+        if (authorizationKey != null) {
+            handleAuthorizationResult(authorizationKey, uri)
         } else if (uri != null) {
             handleDirectorySelection(uri)
         }
@@ -224,7 +225,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnAuthorizeSourceDir.setOnClickListener {
-            if (currentSourceAuthorizationKey != null) {
+            if (currentAuthorizationKey != null) {
                 directoryPickerLauncher.launch(null)
             }
         }
@@ -332,10 +333,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleSelectedDirectory(treeUri: Uri) {
-        tryTakePersistableReadPermission(treeUri)
+        tryTakePersistableTreePermission(treeUri)
+        val importRootInfo = resolveImportRootInfo(treeUri) ?: run {
+            showSystemToast("無法取得匯入資料夾資訊")
+            return
+        }
+        SettingsManager.saveImportRootDirectoryUri(this, importRootInfo.key, treeUri.toString())
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val scanResult = scanSubtitleFilesFromDirectory(treeUri)
+            val scanResult = scanSubtitleFilesFromDirectory(treeUri, importRootInfo)
             withContext(Dispatchers.Main) {
                 applyImportedFiles(
                     importedFiles = scanResult.files,
@@ -406,20 +412,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun scanSubtitleFilesFromDirectory(treeUri: Uri): DirectoryImportResult {
+    private fun scanSubtitleFilesFromDirectory(treeUri: Uri, importRootInfo: ImportRootInfo): DirectoryImportResult {
         val root = DocumentFile.fromTreeUri(this, treeUri) ?: return DirectoryImportResult(emptyList(), 0)
-        val pendingDirectories = ArrayDeque<DocumentFile>()
+        val pendingDirectories = ArrayDeque<DirectoryQueueEntry>()
         val collectedFiles = mutableListOf<SubtitleFile>()
         var skippedInvalidCount = 0
 
-        pendingDirectories.add(root)
+        pendingDirectories.add(DirectoryQueueEntry(root, ""))
         while (pendingDirectories.isNotEmpty()) {
-            val directory = pendingDirectories.removeFirst()
-            directory.listFiles().forEach { child ->
+            val entry = pendingDirectories.removeFirst()
+            entry.directory.listFiles().forEach { child ->
                 when {
-                    child.isDirectory -> pendingDirectories.add(child)
+                    child.isDirectory -> {
+                        val childName = child.name.orEmpty()
+                        val nextPath = if (entry.relativePath.isBlank()) {
+                            childName
+                        } else {
+                            "${entry.relativePath}/$childName"
+                        }
+                        pendingDirectories.add(DirectoryQueueEntry(child, nextPath))
+                    }
                     child.isFile -> {
-                        val subtitleFile = buildSubtitleFile(child.uri, includeInvalidFiles = false)
+                        val subtitleFile = buildSubtitleFile(
+                            uri = child.uri,
+                            includeInvalidFiles = false,
+                            importRootInfo = importRootInfo,
+                            relativeDirectoryPath = entry.relativePath.ifBlank { null }
+                        )
                         if (subtitleFile != null) {
                             collectedFiles.add(subtitleFile)
                         } else {
@@ -433,7 +452,12 @@ class MainActivity : AppCompatActivity() {
         return DirectoryImportResult(collectedFiles, skippedInvalidCount)
     }
 
-    private fun buildSubtitleFile(uri: Uri, includeInvalidFiles: Boolean): SubtitleFile? {
+    private fun buildSubtitleFile(
+        uri: Uri,
+        includeInvalidFiles: Boolean,
+        importRootInfo: ImportRootInfo? = null,
+        relativeDirectoryPath: String? = null
+    ): SubtitleFile? {
         return try {
             val fileName = getFileName(uri)
             val fileSize = getFileSize(uri)
@@ -451,18 +475,21 @@ class MainActivity : AppCompatActivity() {
                 status = if (isValid) FileStatus.PENDING else FileStatus.INVALID,
                 errorMessage = errorMessage,
                 sourceDirectoryKey = sourceDirectoryInfo?.key,
-                sourceDirectoryLabel = sourceDirectoryInfo?.label
+                sourceDirectoryLabel = sourceDirectoryInfo?.label,
+                importRootDirectoryKey = importRootInfo?.key,
+                importRootDirectoryLabel = importRootInfo?.label,
+                relativeDirectoryPath = relativeDirectoryPath
             )
         } catch (_: Exception) {
             null
         }
     }
 
-    private fun tryTakePersistableReadPermission(uri: Uri) {
+    private fun tryTakePersistableTreePermission(uri: Uri) {
         try {
             contentResolver.takePersistableUriPermission(
                 uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             )
         } catch (_: SecurityException) {
         } catch (_: IllegalArgumentException) {
@@ -607,6 +634,38 @@ class MainActivity : AppCompatActivity() {
                 return@forEach
             }
 
+            val importRootKey = file.importRootDirectoryKey
+            if (importRootKey != null) {
+                val savedTreeUri = SettingsManager.getImportRootDirectoryUri(this, importRootKey)?.let(Uri::parse)
+                if (savedTreeUri != null && matchesDirectoryKey(savedTreeUri, importRootKey)) {
+                    pendingSourceReadyTargets.add(
+                        StorageHelper.OutputTarget(
+                            directoryUri = savedTreeUri,
+                            fileName = file.outputFileName!!,
+                            content = file.lrcContent!!,
+                            fileIndex = fileIndex,
+                            sourceDirectoryKey = importRootKey,
+                            relativeDirectoryPath = file.relativeDirectoryPath
+                        )
+                    )
+                } else {
+                    pendingSourceOutputs.add(
+                        PendingSourceOutput(
+                            fileIndex = fileIndex,
+                            authorizationKey = importRootKey,
+                            authorizationLabel = file.importRootDirectoryLabel ?: "匯入根目錄",
+                            authorizationMode = AuthorizationMode.IMPORT_ROOT,
+                            fileName = file.outputFileName!!,
+                            content = file.lrcContent!!,
+                            relativeDirectoryPath = file.relativeDirectoryPath
+                        )
+                    )
+                    pendingAuthorizationLabels[importRootKey] = file.importRootDirectoryLabel ?: "匯入根目錄"
+                    pendingAuthorizationModes[importRootKey] = AuthorizationMode.IMPORT_ROOT
+                }
+                return@forEach
+            }
+
             val sourceDirectoryKey = file.sourceDirectoryKey
             if (sourceDirectoryKey == null) {
                 pendingSourceSaveFailures[fileIndex] = "保存失敗: 無法判定來源目錄"
@@ -614,27 +673,31 @@ class MainActivity : AppCompatActivity() {
             }
 
             val savedTreeUri = SettingsManager.getSourceDirectoryUri(this, sourceDirectoryKey)?.let(Uri::parse)
-            if (savedTreeUri != null && matchesSourceDirectoryKey(savedTreeUri, sourceDirectoryKey)) {
+            if (savedTreeUri != null && matchesDirectoryKey(savedTreeUri, sourceDirectoryKey)) {
                 pendingSourceReadyTargets.add(
                     StorageHelper.OutputTarget(
                         directoryUri = savedTreeUri,
                         fileName = file.outputFileName!!,
                         content = file.lrcContent!!,
                         fileIndex = fileIndex,
-                        sourceDirectoryKey = sourceDirectoryKey
+                        sourceDirectoryKey = sourceDirectoryKey,
+                        relativeDirectoryPath = file.relativeDirectoryPath
                     )
                 )
             } else {
                 pendingSourceOutputs.add(
                     PendingSourceOutput(
                         fileIndex = fileIndex,
-                        sourceDirectoryKey = sourceDirectoryKey,
-                        sourceDirectoryLabel = file.sourceDirectoryLabel ?: "來源目錄",
+                        authorizationKey = sourceDirectoryKey,
+                        authorizationLabel = file.sourceDirectoryLabel ?: "來源目錄",
+                        authorizationMode = AuthorizationMode.SOURCE_DIRECTORY,
                         fileName = file.outputFileName!!,
-                        content = file.lrcContent!!
+                        content = file.lrcContent!!,
+                        relativeDirectoryPath = file.relativeDirectoryPath
                     )
                 )
-                pendingSourceAuthorizationLabels[sourceDirectoryKey] = file.sourceDirectoryLabel ?: "來源目錄"
+                pendingAuthorizationLabels[sourceDirectoryKey] = file.sourceDirectoryLabel ?: "來源目錄"
+                pendingAuthorizationModes[sourceDirectoryKey] = AuthorizationMode.SOURCE_DIRECTORY
             }
         }
 
@@ -643,65 +706,74 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        pendingSourceOutputs.map { it.sourceDirectoryKey }
+        pendingSourceOutputs.map { it.authorizationKey }
             .distinct()
-            .forEach { pendingSourceAuthorizationKeys.add(it) }
+            .forEach { pendingAuthorizationKeys.add(it) }
 
-        requestNextSourceDirectoryAuthorization()
+        requestNextAuthorization()
     }
 
-    private fun requestNextSourceDirectoryAuthorization() {
-        if (pendingSourceAuthorizationKeys.isEmpty()) {
-            currentSourceAuthorizationKey = null
+    private fun requestNextAuthorization() {
+        if (pendingAuthorizationKeys.isEmpty()) {
+            currentAuthorizationKey = null
             updateUiState()
             savePendingSourceTargets()
             return
         }
 
-        currentSourceAuthorizationKey = pendingSourceAuthorizationKeys.removeFirst()
-        val label = pendingSourceAuthorizationLabels[currentSourceAuthorizationKey] ?: "來源目錄"
+        currentAuthorizationKey = pendingAuthorizationKeys.removeFirst()
+        val label = pendingAuthorizationLabels[currentAuthorizationKey] ?: "來源目錄"
+        val mode = pendingAuthorizationModes[currentAuthorizationKey] ?: AuthorizationMode.SOURCE_DIRECTORY
         updateUiState()
-        showFeedback("請授權來源目錄：$label")
+        showFeedback(
+            if (mode == AuthorizationMode.IMPORT_ROOT) {
+                "請重新授權匯入根目錄：$label"
+            } else {
+                "請授權來源目錄：$label"
+            }
+        )
     }
 
-    private fun handleSourceDirectoryAuthorizationResult(sourceDirectoryKey: String, treeUri: Uri?) {
+    private fun handleAuthorizationResult(authorizationKey: String, treeUri: Uri?) {
+        val authorizationMode = pendingAuthorizationModes[authorizationKey] ?: AuthorizationMode.SOURCE_DIRECTORY
         if (treeUri == null) {
-            markPendingOutputsForSourceDirectory(sourceDirectoryKey, "保存失敗: 未授權來源目錄")
-            currentSourceAuthorizationKey = null
+            markPendingOutputsForAuthorization(authorizationKey, "保存失敗: 未授權${authorizationMode.displayName}")
+            currentAuthorizationKey = null
             updateUiState()
-            requestNextSourceDirectoryAuthorization()
+            requestNextAuthorization()
             return
         }
 
-        if (!matchesSourceDirectoryKey(treeUri, sourceDirectoryKey)) {
-            showSystemToast("選取的目錄與來源目錄不符，請重新選擇")
+        if (!matchesDirectoryKey(treeUri, authorizationKey)) {
+            showSystemToast("選取的目錄與${authorizationMode.displayName}不符，請重新選擇")
             directoryPickerLauncher.launch(null)
             return
         }
 
-        contentResolver.takePersistableUriPermission(
-            treeUri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
-        SettingsManager.saveSourceDirectoryUri(this, sourceDirectoryKey, treeUri.toString())
-        movePendingOutputsToReadyTargets(sourceDirectoryKey, treeUri)
-        currentSourceAuthorizationKey = null
+        tryTakePersistableTreePermission(treeUri)
+        when (authorizationMode) {
+            AuthorizationMode.SOURCE_DIRECTORY -> SettingsManager.saveSourceDirectoryUri(this, authorizationKey, treeUri.toString())
+            AuthorizationMode.IMPORT_ROOT -> SettingsManager.saveImportRootDirectoryUri(this, authorizationKey, treeUri.toString())
+        }
+        movePendingOutputsToReadyTargets(authorizationKey, treeUri)
+        currentAuthorizationKey = null
         updateUiState()
-        requestNextSourceDirectoryAuthorization()
+        requestNextAuthorization()
     }
 
-    private fun movePendingOutputsToReadyTargets(sourceDirectoryKey: String, treeUri: Uri) {
+    private fun movePendingOutputsToReadyTargets(authorizationKey: String, treeUri: Uri) {
         val iterator = pendingSourceOutputs.iterator()
         while (iterator.hasNext()) {
             val pendingOutput = iterator.next()
-            if (pendingOutput.sourceDirectoryKey == sourceDirectoryKey) {
+            if (pendingOutput.authorizationKey == authorizationKey) {
                 pendingSourceReadyTargets.add(
                     StorageHelper.OutputTarget(
                         directoryUri = treeUri,
                         fileName = pendingOutput.fileName,
                         content = pendingOutput.content,
                         fileIndex = pendingOutput.fileIndex,
-                        sourceDirectoryKey = sourceDirectoryKey
+                        sourceDirectoryKey = authorizationKey,
+                        relativeDirectoryPath = pendingOutput.relativeDirectoryPath
                     )
                 )
                 iterator.remove()
@@ -709,11 +781,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun markPendingOutputsForSourceDirectory(sourceDirectoryKey: String, errorMessage: String) {
+    private fun markPendingOutputsForAuthorization(authorizationKey: String, errorMessage: String) {
         val iterator = pendingSourceOutputs.iterator()
         while (iterator.hasNext()) {
             val pendingOutput = iterator.next()
-            if (pendingOutput.sourceDirectoryKey == sourceDirectoryKey) {
+            if (pendingOutput.authorizationKey == authorizationKey) {
                 pendingSourceSaveFailures[pendingOutput.fileIndex] = errorMessage
                 iterator.remove()
             }
@@ -774,19 +846,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun resetPendingSourceSaveState() {
-        pendingSourceAuthorizationKeys.clear()
-        pendingSourceAuthorizationLabels.clear()
+        pendingAuthorizationKeys.clear()
+        pendingAuthorizationLabels.clear()
+        pendingAuthorizationModes.clear()
         pendingSourceReadyTargets.clear()
         pendingSourceOutputs.clear()
         pendingSourceSaveFailures.clear()
-        currentSourceAuthorizationKey = null
+        currentAuthorizationKey = null
     }
 
     private fun handleDirectorySelection(uri: Uri) {
-        contentResolver.takePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
+        tryTakePersistableTreePermission(uri)
         settings.outputDirUri = uri.toString()
         SettingsManager.saveSettings(this, settings)
         updateUiState()
@@ -809,7 +879,11 @@ class MainActivity : AppCompatActivity() {
             settings.outputToSourceDirectory -> {
                 tvStorageModeChip.text = "原目錄"
                 tvOutputDir.text = getString(R.string.storage_mode_source)
-                tvOutputDirHint.text = "每個文件會保存在其來源資料夾，首次寫入需要逐目錄授權。"
+                tvOutputDirHint.text = if (settings.recursiveImportEnabled) {
+                    "遞迴匯入時會先授權匯入根目錄，保存時沿用同一授權並重建子資料夾。"
+                } else {
+                    "每個文件會保存在其來源資料夾，首次寫入需要逐目錄授權。"
+                }
                 layoutCustomOutputActions.visibility = View.GONE
             }
             uriString != null -> {
@@ -832,14 +906,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateAuthorizationBanner() {
-        val key = currentSourceAuthorizationKey
+        val key = currentAuthorizationKey
         if (key == null) {
             authBannerCard.visibility = View.GONE
             return
         }
 
-        val label = pendingSourceAuthorizationLabels[key] ?: "來源目錄"
-        tvAuthBannerMessage.text = "首次寫入「$label」時需要授權，授權後會重用此來源目錄權限。"
+        val label = pendingAuthorizationLabels[key] ?: "來源目錄"
+        val mode = pendingAuthorizationModes[key] ?: AuthorizationMode.SOURCE_DIRECTORY
+        tvAuthBannerMessage.text = if (mode == AuthorizationMode.IMPORT_ROOT) {
+            "匯入根目錄「$label」的授權已失效，重新授權後會繼續把輸出寫回對應子資料夾。"
+        } else {
+            "首次寫入「$label」時需要授權，授權後會重用此來源目錄權限。"
+        }
         authBannerCard.visibility = View.VISIBLE
     }
 
@@ -932,6 +1011,20 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun resolveImportRootInfo(treeUri: Uri): ImportRootInfo? {
+        val authority = treeUri.authority ?: return null
+        val treeDocumentId = try {
+            DocumentsContract.getTreeDocumentId(treeUri)
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
+        val label = DocumentFile.fromTreeUri(this, treeUri)?.name ?: extractSourceDirectoryLabel(treeDocumentId)
+        return ImportRootInfo(
+            key = "$authority|$treeDocumentId",
+            label = label
+        )
+    }
+
     private fun extractParentDocumentId(documentId: String): String? {
         val colonIndex = documentId.indexOf(':')
         if (colonIndex >= 0) {
@@ -954,14 +1047,14 @@ class MainActivity : AppCompatActivity() {
         return parentDocumentId.substringAfterLast('/').ifEmpty { parentDocumentId }
     }
 
-    private fun matchesSourceDirectoryKey(treeUri: Uri, sourceDirectoryKey: String): Boolean {
-        val separatorIndex = sourceDirectoryKey.indexOf('|')
+    private fun matchesDirectoryKey(treeUri: Uri, directoryKey: String): Boolean {
+        val separatorIndex = directoryKey.indexOf('|')
         if (separatorIndex <= 0) {
             return false
         }
 
-        val expectedAuthority = sourceDirectoryKey.substring(0, separatorIndex)
-        val expectedTreeDocumentId = sourceDirectoryKey.substring(separatorIndex + 1)
+        val expectedAuthority = directoryKey.substring(0, separatorIndex)
+        val expectedTreeDocumentId = directoryKey.substring(separatorIndex + 1)
         return try {
             treeUri.authority == expectedAuthority &&
                 DocumentsContract.getTreeDocumentId(treeUri) == expectedTreeDocumentId
@@ -975,16 +1068,33 @@ class MainActivity : AppCompatActivity() {
         val label: String
     )
 
+    private data class ImportRootInfo(
+        val key: String,
+        val label: String
+    )
+
     private data class PendingSourceOutput(
         val fileIndex: Int,
-        val sourceDirectoryKey: String,
-        val sourceDirectoryLabel: String,
+        val authorizationKey: String,
+        val authorizationLabel: String,
+        val authorizationMode: AuthorizationMode,
         val fileName: String,
-        val content: String
+        val content: String,
+        val relativeDirectoryPath: String?
     )
 
     private data class DirectoryImportResult(
         val files: List<SubtitleFile>,
         val skippedInvalidCount: Int
     )
+
+    private data class DirectoryQueueEntry(
+        val directory: DocumentFile,
+        val relativePath: String
+    )
+
+    private enum class AuthorizationMode(val displayName: String) {
+        SOURCE_DIRECTORY("來源目錄"),
+        IMPORT_ROOT("匯入根目錄")
+    }
 }

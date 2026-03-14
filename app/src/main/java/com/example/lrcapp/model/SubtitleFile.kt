@@ -11,7 +11,10 @@ data class SubtitleFile(
     var outputFileName: String? = null,
     var lrcContent: String? = null,
     var sourceDirectoryKey: String? = null,
-    var sourceDirectoryLabel: String? = null
+    var sourceDirectoryLabel: String? = null,
+    var importRootDirectoryKey: String? = null,
+    var importRootDirectoryLabel: String? = null,
+    var relativeDirectoryPath: String? = null
 )
 
 enum class FileStatus {

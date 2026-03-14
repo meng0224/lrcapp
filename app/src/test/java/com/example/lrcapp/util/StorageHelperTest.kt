@@ -34,6 +34,34 @@ class StorageHelperTest {
     }
 
     @Test
+    fun resolveTargetDirectoryReusesExistingNestedDirectories() {
+        val root = FakeDocumentFile("root", true)
+        val season = FakeDocumentFile("season", true)
+        val episode = FakeDocumentFile("episode", true)
+        root.children.add(season)
+        season.children.add(episode)
+
+        val resolved = StorageHelper.resolveTargetDirectory(root, "season/episode")
+
+        assertSame(episode, resolved)
+        assertEquals(0, root.createDirectoryCalls)
+        assertEquals(0, season.createDirectoryCalls)
+    }
+
+    @Test
+    fun resolveTargetDirectoryCreatesMissingNestedDirectories() {
+        val root = FakeDocumentFile("root", true)
+
+        val resolved = StorageHelper.resolveTargetDirectory(root, "season/episode")
+
+        assertTrue(resolved != null)
+        assertEquals(1, root.createDirectoryCalls)
+        assertEquals(1, root.children[0].createDirectoryCalls)
+        assertEquals("season", root.children[0].name)
+        assertEquals("episode", resolved?.name)
+    }
+
+    @Test
     fun countSuccessfulResultsOnlyCountsNonNullEntries() {
         val savedCount = StorageHelper.countSuccessfulResults(listOf("a.lrc", null, "b.lrc", null))
 
@@ -46,7 +74,8 @@ class StorageHelperTest {
             directoryUri = Uri.parse("content://tree/one"),
             fileName = "a.lrc",
             content = "[00:00.00]A",
-            fileIndex = 0
+            fileIndex = 0,
+            relativeDirectoryPath = "album/disc1"
         )
         val failedTarget = StorageHelper.OutputTarget(
             directoryUri = Uri.parse("content://tree/two"),
@@ -72,6 +101,7 @@ class StorageHelperTest {
     ) : DocumentFile(null) {
         val children = mutableListOf<FakeDocumentFile>()
         var createFileCalls = 0
+        var createDirectoryCalls = 0
         var deleteCalls = 0
 
         override fun createFile(mimeType: String, displayName: String): DocumentFile {
@@ -80,6 +110,7 @@ class StorageHelperTest {
         }
 
         override fun createDirectory(displayName: String): DocumentFile {
+            createDirectoryCalls++
             return FakeDocumentFile(displayName, true).also { children.add(it) }
         }
 
@@ -111,6 +142,10 @@ class StorageHelperTest {
         override fun exists(): Boolean = true
 
         override fun listFiles(): Array<DocumentFile> = children.toTypedArray()
+
+        override fun findFile(displayName: String): DocumentFile? {
+            return children.firstOrNull { it.name == displayName }
+        }
 
         override fun renameTo(displayName: String): Boolean = false
     }
