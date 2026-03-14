@@ -70,6 +70,22 @@ class FileSelectionPolicyTest {
         assertEquals(1, result.addedCount)
     }
 
+    @Test
+    fun recursiveImportModeCanAppendEvenWhenNotUsingSourceDirectoryOutput() {
+        val existing = listOf(file("content://docs/a/song1.srt", "song1.srt"))
+        val incoming = listOf(
+            file("content://docs/a/song1.srt", "song1.srt"),
+            file("content://docs/b/song2.ass", "song2.ass")
+        )
+
+        val result = FileSelectionPolicy.mergeSelections(existing, incoming, appendToExisting = true)
+
+        assertEquals(2, result.files.size)
+        assertEquals(1, result.addedCount)
+        assertEquals(1, result.skippedDuplicateCount)
+        assertEquals(Uri.parse("content://docs/b/song2.ass"), result.files[1].uri)
+    }
+
     private fun file(
         uri: String,
         fileName: String,
