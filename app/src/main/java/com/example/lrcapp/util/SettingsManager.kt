@@ -9,6 +9,7 @@ object SettingsManager {
     private const val PREFS_NAME = "lrc_app_settings"
     private const val KEY_OUTPUT_DIR_URI = "output_dir_uri"
     private const val KEY_OUTPUT_TO_SOURCE_DIRECTORY = "output_to_source_directory"
+    private const val KEY_RECURSIVE_IMPORT_ENABLED = "recursive_import_enabled"
     private const val KEY_SOURCE_DIRECTORY_URI_PREFIX = "source_directory_uri_"
 
     private fun getSharedPreferences(context: Context): SharedPreferences {
@@ -19,7 +20,8 @@ object SettingsManager {
         val prefs = getSharedPreferences(context)
         return fromStoredValues(
             outputDirUri = prefs.getString(KEY_OUTPUT_DIR_URI, null),
-            outputToSourceDirectory = prefs.getBoolean(KEY_OUTPUT_TO_SOURCE_DIRECTORY, false)
+            outputToSourceDirectory = prefs.getBoolean(KEY_OUTPUT_TO_SOURCE_DIRECTORY, false),
+            recursiveImportEnabled = prefs.getBoolean(KEY_RECURSIVE_IMPORT_ENABLED, false)
         )
     }
 
@@ -28,6 +30,7 @@ object SettingsManager {
         prefs.edit().apply {
             putString(KEY_OUTPUT_DIR_URI, settings.outputDirUri)
             putBoolean(KEY_OUTPUT_TO_SOURCE_DIRECTORY, settings.outputToSourceDirectory)
+            putBoolean(KEY_RECURSIVE_IMPORT_ENABLED, settings.recursiveImportEnabled)
             apply()
         }
     }
@@ -42,12 +45,17 @@ object SettingsManager {
             .apply()
     }
 
-    internal fun fromStoredValues(outputDirUri: String?, outputToSourceDirectory: Boolean): AppSettings {
+    internal fun fromStoredValues(
+        outputDirUri: String?,
+        outputToSourceDirectory: Boolean,
+        recursiveImportEnabled: Boolean
+    ): AppSettings {
         return AppSettings(
             smartNaming = true,
             timePrecision = true,
             outputDirUri = outputDirUri,
-            outputToSourceDirectory = outputToSourceDirectory
+            outputToSourceDirectory = outputToSourceDirectory,
+            recursiveImportEnabled = recursiveImportEnabled
         )
     }
 

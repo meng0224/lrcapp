@@ -12,11 +12,13 @@ class SettingsManagerTest {
     fun fromStoredValuesLoadsOutputToSourceDirectory() {
         val settings = SettingsManager.fromStoredValues(
             outputDirUri = null,
-            outputToSourceDirectory = true
+            outputToSourceDirectory = true,
+            recursiveImportEnabled = false
         )
 
         assertTrue(settings.outputToSourceDirectory)
         assertNull(settings.outputDirUri)
+        assertFalse(settings.recursiveImportEnabled)
         assertTrue(settings.smartNaming)
         assertTrue(settings.timePrecision)
     }
@@ -25,10 +27,23 @@ class SettingsManagerTest {
     fun fromStoredValuesKeepsCustomOutputDirectoryWhenSourceModeDisabled() {
         val settings = SettingsManager.fromStoredValues(
             outputDirUri = "content://tree/downloads",
-            outputToSourceDirectory = false
+            outputToSourceDirectory = false,
+            recursiveImportEnabled = false
         )
 
         assertEquals("content://tree/downloads", settings.outputDirUri)
+        assertFalse(settings.outputToSourceDirectory)
+    }
+
+    @Test
+    fun fromStoredValuesLoadsRecursiveImportFlag() {
+        val settings = SettingsManager.fromStoredValues(
+            outputDirUri = null,
+            outputToSourceDirectory = false,
+            recursiveImportEnabled = true
+        )
+
+        assertTrue(settings.recursiveImportEnabled)
         assertFalse(settings.outputToSourceDirectory)
     }
 

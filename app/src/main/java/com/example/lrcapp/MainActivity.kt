@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnClearOutputDir: MaterialButton
     private lateinit var btnClearFileList: MaterialButton
     private lateinit var switchOutputToSourceDirectory: SwitchMaterial
+    private lateinit var switchRecursiveImport: SwitchMaterial
     private lateinit var toolbar: MaterialToolbar
     private lateinit var emptyStateContainer: View
     private lateinit var secondaryActionsRow: View
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         if (permissions.values.all { it }) {
-            openFilePicker()
+            openImportPicker()
         } else {
             showSystemToast("未授予讀取外部儲存的權限")
         }
@@ -108,6 +109,14 @@ class MainActivity : AppCompatActivity() {
             handleSourceDirectoryAuthorizationResult(sourceAuthorizationKey, uri)
         } else if (uri != null) {
             handleDirectorySelection(uri)
+        }
+    }
+
+    private val importDirectoryPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            handleSelectedDirectory(uri)
         }
     }
 
@@ -146,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         btnClearOutputDir = findViewById(R.id.btnClearOutputDir)
         btnClearFileList = findViewById(R.id.btnClearFileList)
         switchOutputToSourceDirectory = findViewById(R.id.switchOutputToSourceDirectory)
+        switchRecursiveImport = findViewById(R.id.switchRecursiveImport)
         emptyStateContainer = findViewById(R.id.emptyStateContainer)
         secondaryActionsRow = findViewById(R.id.secondaryActionsRow)
         layoutCustomOutputActions = findViewById(R.id.layoutCustomOutputActions)
@@ -159,6 +169,7 @@ class MainActivity : AppCompatActivity() {
             SettingsManager.saveSettings(this, settings)
         }
         syncSourceDirectorySwitch()
+        syncRecursiveImportSwitch()
     }
 
     private fun syncSourceDirectorySwitch() {
@@ -166,6 +177,14 @@ class MainActivity : AppCompatActivity() {
         switchOutputToSourceDirectory.isChecked = settings.outputToSourceDirectory
         switchOutputToSourceDirectory.setOnCheckedChangeListener { _, isChecked ->
             handleSourceDirectoryToggle(isChecked)
+        }
+    }
+
+    private fun syncRecursiveImportSwitch() {
+        switchRecursiveImport.setOnCheckedChangeListener(null)
+        switchRecursiveImport.isChecked = settings.recursiveImportEnabled
+        switchRecursiveImport.setOnCheckedChangeListener { _, isChecked ->
+            handleRecursiveImportToggle(isChecked)
         }
     }
 
@@ -224,6 +243,13 @@ class MainActivity : AppCompatActivity() {
         updateUiState()
     }
 
+    private fun handleRecursiveImportToggle(enable: Boolean) {
+        settings.recursiveImportEnabled = enable
+        SettingsManager.saveSettings(this, settings)
+        syncRecursiveImportSwitch()
+        updateUiState()
+    }
+
     private fun clearCustomOutputDirectory() {
         if (settings.outputDirUri == null) {
             showSystemToast("目前沒有自訂輸出資料夾")
@@ -254,13 +280,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndRequestImportPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            openFilePicker()
+            openImportPicker()
             return
         }
 
         val permission = Manifest.permission.READ_EXTERNAL_STORAGE
         if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
             permissionLauncher.launch(arrayOf(permission))
+        } else {
+            openImportPicker()
+        }
+    }
+
+    private fun openImportPicker() {
+        if (settings.recursiveImportEnabled) {
+            openImportDirectoryPicker()
         } else {
             openFilePicker()
         }
@@ -275,52 +309,163 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun openImportDirectoryPicker() {
+        try {
+            importDirectoryPickerLauncher.launch(null)
+        } catch (e: Exception) {
+            showSystemToast("無法打開資料夾選擇器: ${e.message}")
+        }
+    }
+
     private fun handleSelectedFiles(uris: List<Uri>) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val newFiles = mutableListOf<SubtitleFile>()
-
-            for (uri in uris) {
-                try {
-                    val fileName = getFileName(uri)
-                    val fileSize = getFileSize(uri)
-                    val sourceDirectoryInfo = resolveSourceDirectoryInfo(uri)
-
-                    val (isValid, errorMessage) = FileValidator.validateFile(fileName, fileSize)
-
-                    newFiles.add(
-                        SubtitleFile(
-                            uri = uri,
-                            fileName = fileName,
-                            fileSize = fileSize,
-                            status = if (isValid) FileStatus.PENDING else FileStatus.INVALID,
-                            errorMessage = errorMessage,
-                            sourceDirectoryKey = sourceDirectoryInfo?.key,
-                            sourceDirectoryLabel = sourceDirectoryInfo?.label
-                        )
-                    )
-                } catch (_: Exception) {
-                }
-            }
-
+            val newFiles = uris.mapNotNull { buildSubtitleFile(it, includeInvalidFiles = true) }
             withContext(Dispatchers.Main) {
-                val mergeResult = FileSelectionPolicy.mergeSelections(
-                    existingFiles = files,
-                    newFiles = newFiles,
-                    appendToExisting = settings.outputToSourceDirectory
+                applyImportedFiles(
+                    importedFiles = newFiles,
+                    appendToExisting = settings.outputToSourceDirectory,
+                    skippedInvalidCount = 0,
+                    isRecursiveImport = false
                 )
-
-                files.clear()
-                files.addAll(mergeResult.files)
-                adapter.notifyDataSetChanged()
-                updateUiState()
-
-                val message = if (settings.outputToSourceDirectory) {
-                    "已新增 ${mergeResult.addedCount} 個文件，略過 ${mergeResult.skippedDuplicateCount} 個重複文件"
-                } else {
-                    "已選擇 ${newFiles.size} 個文件"
-                }
-                showFeedback(message)
             }
+        }
+    }
+
+    private fun handleSelectedDirectory(treeUri: Uri) {
+        tryTakePersistableReadPermission(treeUri)
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val scanResult = scanSubtitleFilesFromDirectory(treeUri)
+            withContext(Dispatchers.Main) {
+                applyImportedFiles(
+                    importedFiles = scanResult.files,
+                    appendToExisting = true,
+                    skippedInvalidCount = scanResult.skippedInvalidCount,
+                    isRecursiveImport = true
+                )
+            }
+        }
+    }
+
+    private fun applyImportedFiles(
+        importedFiles: List<SubtitleFile>,
+        appendToExisting: Boolean,
+        skippedInvalidCount: Int,
+        isRecursiveImport: Boolean
+    ) {
+        val mergeResult = FileSelectionPolicy.mergeSelections(
+            existingFiles = files,
+            newFiles = importedFiles,
+            appendToExisting = appendToExisting
+        )
+
+        files.clear()
+        files.addAll(mergeResult.files)
+        adapter.notifyDataSetChanged()
+        updateUiState()
+
+        val message = if (isRecursiveImport) {
+            buildRecursiveImportMessage(
+                addedCount = mergeResult.addedCount,
+                skippedDuplicateCount = mergeResult.skippedDuplicateCount,
+                skippedInvalidCount = skippedInvalidCount
+            )
+        } else if (appendToExisting) {
+            "已新增 ${mergeResult.addedCount} 個文件，略過 ${mergeResult.skippedDuplicateCount} 個重複文件"
+        } else {
+            "已選擇 ${importedFiles.size} 個文件"
+        }
+        showFeedback(message)
+    }
+
+    private fun buildRecursiveImportMessage(
+        addedCount: Int,
+        skippedDuplicateCount: Int,
+        skippedInvalidCount: Int
+    ): String {
+        val skippedSummary = mutableListOf<String>()
+        if (skippedDuplicateCount > 0) {
+            skippedSummary.add("$skippedDuplicateCount 個重複文件")
+        }
+        if (skippedInvalidCount > 0) {
+            skippedSummary.add("$skippedInvalidCount 個無效文件")
+        }
+
+        if (addedCount == 0) {
+            return if (skippedSummary.isEmpty()) {
+                "所選資料夾中沒有可新增的字幕文件"
+            } else {
+                "未新增任何文件，略過 ${skippedSummary.joinToString("、")}"
+            }
+        }
+
+        return if (skippedSummary.isEmpty()) {
+            "已新增 $addedCount 個文件"
+        } else {
+            "已新增 $addedCount 個文件，略過 ${skippedSummary.joinToString("、")}"
+        }
+    }
+
+    private fun scanSubtitleFilesFromDirectory(treeUri: Uri): DirectoryImportResult {
+        val root = DocumentFile.fromTreeUri(this, treeUri) ?: return DirectoryImportResult(emptyList(), 0)
+        val pendingDirectories = ArrayDeque<DocumentFile>()
+        val collectedFiles = mutableListOf<SubtitleFile>()
+        var skippedInvalidCount = 0
+
+        pendingDirectories.add(root)
+        while (pendingDirectories.isNotEmpty()) {
+            val directory = pendingDirectories.removeFirst()
+            directory.listFiles().forEach { child ->
+                when {
+                    child.isDirectory -> pendingDirectories.add(child)
+                    child.isFile -> {
+                        val subtitleFile = buildSubtitleFile(child.uri, includeInvalidFiles = false)
+                        if (subtitleFile != null) {
+                            collectedFiles.add(subtitleFile)
+                        } else {
+                            skippedInvalidCount++
+                        }
+                    }
+                }
+            }
+        }
+
+        return DirectoryImportResult(collectedFiles, skippedInvalidCount)
+    }
+
+    private fun buildSubtitleFile(uri: Uri, includeInvalidFiles: Boolean): SubtitleFile? {
+        return try {
+            val fileName = getFileName(uri)
+            val fileSize = getFileSize(uri)
+            val sourceDirectoryInfo = resolveSourceDirectoryInfo(uri)
+            val (isValid, errorMessage) = FileValidator.validateFile(fileName, fileSize)
+
+            if (!isValid && !includeInvalidFiles) {
+                return null
+            }
+
+            SubtitleFile(
+                uri = uri,
+                fileName = fileName,
+                fileSize = fileSize,
+                status = if (isValid) FileStatus.PENDING else FileStatus.INVALID,
+                errorMessage = errorMessage,
+                sourceDirectoryKey = sourceDirectoryInfo?.key,
+                sourceDirectoryLabel = sourceDirectoryInfo?.label
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun tryTakePersistableReadPermission(uri: Uri) {
+        try {
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (_: SecurityException) {
+        } catch (_: IllegalArgumentException) {
         }
     }
 
@@ -738,7 +883,7 @@ class MainActivity : AppCompatActivity() {
 
         btnConvert.isEnabled = true
         if (files.isEmpty()) {
-            btnConvert.text = "選擇文件"
+            btnConvert.text = if (settings.recursiveImportEnabled) "選擇資料夾" else "選擇文件"
             secondaryActionsRow.visibility = View.GONE
             return
         }
@@ -749,7 +894,11 @@ class MainActivity : AppCompatActivity() {
             "沒有可轉換的文件"
         }
         btnConvert.isEnabled = eligibleCount > 0
-        btnSelectFiles.text = if (settings.outputToSourceDirectory) "新增文件" else "重新選擇"
+        btnSelectFiles.text = when {
+            settings.recursiveImportEnabled -> "新增資料夾"
+            settings.outputToSourceDirectory -> "新增文件"
+            else -> "重新選擇"
+        }
         secondaryActionsRow.visibility = View.VISIBLE
     }
 
@@ -832,5 +981,10 @@ class MainActivity : AppCompatActivity() {
         val sourceDirectoryLabel: String,
         val fileName: String,
         val content: String
+    )
+
+    private data class DirectoryImportResult(
+        val files: List<SubtitleFile>,
+        val skippedInvalidCount: Int
     )
 }

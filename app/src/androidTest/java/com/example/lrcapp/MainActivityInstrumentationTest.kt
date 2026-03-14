@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -21,7 +22,7 @@ class MainActivityInstrumentationTest {
     @After
     fun resetSettings() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        SettingsManager.saveSettings(context, SettingsManager.fromStoredValues(null, false))
+        SettingsManager.saveSettings(context, SettingsManager.fromStoredValues(null, false, false))
     }
 
     @Test
@@ -45,11 +46,21 @@ class MainActivityInstrumentationTest {
     @Test
     fun sourceDirectoryModeShowsStorageStateOnLaunch() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        SettingsManager.saveSettings(context, SettingsManager.fromStoredValues(null, true))
+        SettingsManager.saveSettings(context, SettingsManager.fromStoredValues(null, true, false))
 
         ActivityScenario.launch(MainActivity::class.java).use {
             onView(withId(R.id.tvStorageModeChip)).check(matches(withText("原目錄")))
             onView(withId(R.id.tvOutputDir)).check(matches(withText("輸出到原文件目錄")))
+        }
+    }
+
+    @Test
+    fun recursiveImportSwitchRestoresEnabledStateOnLaunch() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        SettingsManager.saveSettings(context, SettingsManager.fromStoredValues(null, false, true))
+
+        ActivityScenario.launch(MainActivity::class.java).use {
+            onView(withId(R.id.switchRecursiveImport)).check(matches(isChecked()))
         }
     }
 }

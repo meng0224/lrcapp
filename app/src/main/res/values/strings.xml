@@ -8,6 +8,8 @@
     <string name="storage_mode_custom">自訂 SAF 授權目錄</string>
     <string name="storage_mode_source">輸出到原文件目錄</string>
     <string name="storage_source_hint">開啟後，會依來源資料夾逐一要求 SAF 授權並寫回原目錄。</string>
+    <string name="recursive_import_title">遞迴匯入子資料夾字幕</string>
+    <string name="recursive_import_hint">開啟後，選檔入口會改為選擇資料夾，並遍歷子資料夾一次加入字幕檔。</string>
     <string name="supported_formats">支援 VTT、ASS、SSA、SRT、STR、SMI、SUB</string>
     <string name="output_format">輸出格式固定為 LRC</string>
 </resources>
