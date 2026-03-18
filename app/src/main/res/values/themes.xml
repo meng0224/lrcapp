@@ -27,11 +27,6 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">@color/md_theme_light_background</item>
-        <item name="materialToolbarStyle">@style/Widget.LrcApp.Toolbar</item>
-        <item name="materialCardViewStyle">@style/Widget.LrcApp.Card</item>
-        <item name="materialButtonStyle">@style/Widget.LrcApp.Button.Filled</item>
-        <item name="chipStyle">@style/Widget.LrcApp.Chip.Assist</item>
-        <item name="materialSwitchStyle">@style/Widget.LrcApp.Switch</item>
         <item name="textAppearanceHeadlineSmall">@style/TextAppearance.LrcApp.HeadlineSmall</item>
         <item name="textAppearanceTitleLarge">@style/TextAppearance.LrcApp.TitleLarge</item>
         <item name="textAppearanceTitleMedium">@style/TextAppearance.LrcApp.TitleMedium</item>
