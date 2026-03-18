@@ -12,4 +12,25 @@
     <string name="recursive_import_hint">開啟後，選檔入口會改為選擇資料夾，並遍歷子資料夾一次加入字幕檔。</string>
     <string name="supported_formats">支援 VTT、ASS、SSA、SRT、STR、SMI、SUB</string>
     <string name="output_format">輸出格式固定為 LRC</string>
+    <string name="auth_banner_title">需要授權存取目錄</string>
+    <string name="auth_banner_message">首次寫入來源資料夾時，請授權存取權限。</string>
+    <string name="authorize_directory">授權目錄</string>
+    <string name="storage_mode_chip_default">預設</string>
+    <string name="progress_section_title">轉換進度</string>
+    <string name="progress_placeholder">正在處理文件...</string>
+    <string name="file_list_title">文件列表</string>
+    <string name="empty_state_badge">LRC</string>
+    <string name="empty_state_title">尚未選擇文件</string>
+    <string name="format_explainer_title">格式說明</string>
+    <string name="select_directory">選擇目錄</string>
+    <string name="clear_directory">清除目錄</string>
+    <string name="select_files">選擇文件</string>
+    <string name="reselect_files">重新選擇</string>
+    <string name="clear_file_list">清除列表</string>
+    <string name="item_file_name_placeholder">文件名</string>
+    <string name="item_status_pending">待處理</string>
+    <string name="item_file_size_placeholder">45 KB</string>
+    <string name="item_file_format_placeholder">SRT</string>
+    <string name="item_output_placeholder">輸出:</string>
+    <string name="item_error_placeholder">錯誤資訊</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.example.lrcapp.adapter
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,7 @@ import com.example.lrcapp.R
 import com.example.lrcapp.model.FileStatus
 import com.example.lrcapp.model.SubtitleFile
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
 import java.util.Locale
 
 class SubtitleFileAdapter(
@@ -19,9 +21,9 @@ class SubtitleFileAdapter(
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val cardView: MaterialCardView = itemView.findViewById(R.id.cardView)
         val tvFileName: TextView = itemView.findViewById(R.id.tvFileName)
-        val tvStatus: TextView = itemView.findViewById(R.id.tvStatus)
+        val tvStatus: Chip = itemView.findViewById(R.id.tvStatus)
         val tvFileMeta: TextView = itemView.findViewById(R.id.tvFileMeta)
-        val tvFileFormat: TextView = itemView.findViewById(R.id.tvFileFormat)
+        val tvFileFormat: Chip = itemView.findViewById(R.id.tvFileFormat)
         val tvOutputFileName: TextView = itemView.findViewById(R.id.tvOutputFileName)
         val tvErrorMessage: TextView = itemView.findViewById(R.id.tvErrorMessage)
     }
@@ -37,15 +39,15 @@ class SubtitleFileAdapter(
 
         holder.tvFileName.text = file.fileName
         holder.tvFileMeta.text = formatFileSize(file.fileSize)
-        holder.tvFileFormat.text = extractFormat(file.fileName)
+        bindFormatChip(holder.tvFileFormat, extractFormat(file.fileName))
 
         when (file.status) {
             FileStatus.PENDING -> bindStatus(
                 holder = holder,
                 label = "待處理",
-                backgroundRes = R.drawable.status_background_pending,
-                textColorRes = R.color.status_pending_text,
-                strokeColorRes = R.color.outline_subtle,
+                chipBackgroundRes = R.color.status_pending_container,
+                chipTextColorRes = R.color.status_pending_onContainer,
+                strokeColorRes = R.color.md_theme_light_outline,
                 outputText = null,
                 errorText = null
             )
@@ -53,9 +55,9 @@ class SubtitleFileAdapter(
             FileStatus.INVALID -> bindStatus(
                 holder = holder,
                 label = "無效",
-                backgroundRes = R.drawable.status_background_error,
-                textColorRes = R.color.status_error_text,
-                strokeColorRes = R.color.status_error_bg,
+                chipBackgroundRes = R.color.status_error_container,
+                chipTextColorRes = R.color.status_error_onContainer,
+                strokeColorRes = R.color.status_error_container,
                 outputText = null,
                 errorText = file.errorMessage
             )
@@ -63,9 +65,9 @@ class SubtitleFileAdapter(
             FileStatus.PROCESSING -> bindStatus(
                 holder = holder,
                 label = "處理中",
-                backgroundRes = R.drawable.status_background_processing,
-                textColorRes = R.color.status_processing_text,
-                strokeColorRes = R.color.status_processing_bg,
+                chipBackgroundRes = R.color.status_processing_container,
+                chipTextColorRes = R.color.status_processing_onContainer,
+                strokeColorRes = R.color.md_theme_light_primary,
                 outputText = null,
                 errorText = null
             )
@@ -73,9 +75,9 @@ class SubtitleFileAdapter(
             FileStatus.SUCCESS -> bindStatus(
                 holder = holder,
                 label = "成功",
-                backgroundRes = R.drawable.status_background_success,
-                textColorRes = R.color.status_success_text,
-                strokeColorRes = R.color.status_success_bg,
+                chipBackgroundRes = R.color.status_success_container,
+                chipTextColorRes = R.color.status_success_onContainer,
+                strokeColorRes = R.color.md_theme_light_tertiary,
                 outputText = file.outputFileName?.let { "輸出: $it" },
                 errorText = null
             )
@@ -83,9 +85,9 @@ class SubtitleFileAdapter(
             FileStatus.ERROR -> bindStatus(
                 holder = holder,
                 label = "失敗",
-                backgroundRes = R.drawable.status_background_error,
-                textColorRes = R.color.status_error_text,
-                strokeColorRes = R.color.status_error_bg,
+                chipBackgroundRes = R.color.status_error_container,
+                chipTextColorRes = R.color.status_error_onContainer,
+                strokeColorRes = R.color.status_error_container,
                 outputText = null,
                 errorText = file.errorMessage
             )
@@ -102,16 +104,18 @@ class SubtitleFileAdapter(
     private fun bindStatus(
         holder: ViewHolder,
         label: String,
-        backgroundRes: Int,
-        textColorRes: Int,
+        chipBackgroundRes: Int,
+        chipTextColorRes: Int,
         strokeColorRes: Int,
         outputText: String?,
         errorText: String?
     ) {
         val context = holder.itemView.context
         holder.tvStatus.text = label
-        holder.tvStatus.setBackgroundResource(backgroundRes)
-        holder.tvStatus.setTextColor(ContextCompat.getColor(context, textColorRes))
+        holder.tvStatus.chipBackgroundColor = ColorStateList.valueOf(
+            ContextCompat.getColor(context, chipBackgroundRes)
+        )
+        holder.tvStatus.setTextColor(ContextCompat.getColor(context, chipTextColorRes))
         holder.cardView.strokeColor = ContextCompat.getColor(context, strokeColorRes)
 
         if (outputText != null) {
@@ -127,6 +131,15 @@ class SubtitleFileAdapter(
         } else {
             holder.tvErrorMessage.visibility = View.GONE
         }
+    }
+
+    private fun bindFormatChip(chip: Chip, format: String) {
+        val context = chip.context
+        chip.text = format
+        chip.chipBackgroundColor = ColorStateList.valueOf(
+            ContextCompat.getColor(context, R.color.status_pending_container)
+        )
+        chip.setTextColor(ContextCompat.getColor(context, R.color.status_pending_onContainer))
     }
 
     private fun extractFormat(fileName: String): String {

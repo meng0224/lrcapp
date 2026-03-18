@@ -2,19 +2,16 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardView"
+    style="@style/Widget.LrcApp.Card.Section"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    app:cardBackgroundColor="@color/surface_card"
-    app:cardCornerRadius="16dp"
-    app:strokeColor="@color/outline_subtle"
-    app:strokeWidth="1dp">
+    android:layout_marginBottom="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="18dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -28,29 +25,26 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:maxLines="1"
-                android:text="文件名"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                android:textColor="@color/text_primary"
+                android:text="@string/item_file_name_placeholder"
+                android:textAppearance="@style/TextAppearance.LrcApp.BodyLarge"
+                android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
-            <TextView
+            <com.google.android.material.chip.Chip
                 android:id="@+id/tvStatus"
+                style="@style/Widget.LrcApp.Chip.Status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/status_background_pending"
-                android:paddingStart="10dp"
-                android:paddingTop="6dp"
-                android:paddingEnd="10dp"
-                android:paddingBottom="6dp"
-                android:text="待處理"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption" />
+                android:text="@string/item_status_pending"
+                app:chipBackgroundColor="@color/status_pending_container"
+                android:textColor="@color/status_pending_onContainer" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -59,43 +53,36 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="45 KB"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                android:textColor="@color/text_secondary" />
+                android:text="@string/item_file_size_placeholder"
+                android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
 
-            <TextView
+            <com.google.android.material.chip.Chip
                 android:id="@+id/tvFileFormat"
+                style="@style/Widget.LrcApp.Chip.Status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/badge_background_neutral"
-                android:paddingStart="8dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="4dp"
-                android:text="SRT"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                android:textColor="@color/text_secondary"
-                android:textStyle="bold" />
+                android:text="@string/item_file_format_placeholder"
+                app:chipBackgroundColor="@color/status_pending_container"
+                android:textColor="@color/status_pending_onContainer" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/tvOutputFileName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="輸出: "
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/text_secondary"
+            android:layout_marginTop="10dp"
+            android:text="@string/item_output_placeholder"
+            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvErrorMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="錯誤資訊"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/status_error_text"
+            android:layout_marginTop="10dp"
+            android:text="@string/item_error_placeholder"
+            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
+            android:textColor="?attr/colorError"
             android:visibility="gone" />
 
     </LinearLayout>
