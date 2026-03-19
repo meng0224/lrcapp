@@ -2,6 +2,7 @@ package com.example.lrcapp
 
 import android.Manifest
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -35,7 +36,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.chip.Chip
+import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,15 +57,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAuthorizeSourceDir: MaterialButton
     private lateinit var tvOutputDir: TextView
     private lateinit var tvOutputDirHint: TextView
-    private lateinit var tvStorageModeChip: TextView
+    private lateinit var tvStorageModeChip: Chip
     private lateinit var tvAuthBannerMessage: TextView
     private lateinit var tvFileListTitle: TextView
     private lateinit var tvFileSummary: TextView
     private lateinit var btnSelectOutputDir: MaterialButton
     private lateinit var btnClearOutputDir: MaterialButton
     private lateinit var btnClearFileList: MaterialButton
-    private lateinit var switchOutputToSourceDirectory: SwitchMaterial
-    private lateinit var switchRecursiveImport: SwitchMaterial
+    private lateinit var switchOutputToSourceDirectory: MaterialSwitch
+    private lateinit var switchRecursiveImport: MaterialSwitch
     private lateinit var toolbar: MaterialToolbar
     private lateinit var emptyStateContainer: View
     private lateinit var secondaryActionsRow: View
@@ -905,7 +907,11 @@ class MainActivity : AppCompatActivity() {
 
         when {
             settings.outputToSourceDirectory -> {
-                tvStorageModeChip.text = "原目錄"
+                setStorageModeChip(
+                    label = "原目錄",
+                    backgroundColorRes = R.color.md_theme_light_primaryContainer,
+                    textColorRes = R.color.md_theme_light_onPrimaryContainer
+                )
                 tvOutputDir.text = getString(R.string.storage_mode_source)
                 tvOutputDirHint.text = if (settings.recursiveImportEnabled) {
                     "遞迴匯入時會先授權匯入根目錄，保存時沿用同一授權並重建子資料夾。"
@@ -915,14 +921,22 @@ class MainActivity : AppCompatActivity() {
                 layoutCustomOutputActions.visibility = View.GONE
             }
             uriString != null -> {
-                tvStorageModeChip.text = "自訂"
+                setStorageModeChip(
+                    label = "自訂",
+                    backgroundColorRes = R.color.md_theme_light_secondaryContainer,
+                    textColorRes = R.color.md_theme_light_onSecondaryContainer
+                )
                 tvOutputDir.text = getString(R.string.storage_mode_custom)
                 tvOutputDirHint.text = customDirectoryName ?: "已授權目錄"
                 layoutCustomOutputActions.visibility = View.VISIBLE
                 btnSelectOutputDir.text = "變更目錄"
             }
             else -> {
-                tvStorageModeChip.text = "預設"
+                setStorageModeChip(
+                    label = "預設",
+                    backgroundColorRes = R.color.status_pending_container,
+                    textColorRes = R.color.status_pending_onContainer
+                )
                 tvOutputDir.text = getString(R.string.storage_mode_default)
                 tvOutputDirHint.text = "/storage/emulated/0/Download"
                 layoutCustomOutputActions.visibility = View.VISIBLE
@@ -931,6 +945,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnClearOutputDir.isEnabled = settings.outputDirUri != null
+    }
+
+    private fun setStorageModeChip(label: String, backgroundColorRes: Int, textColorRes: Int) {
+        tvStorageModeChip.text = label
+        tvStorageModeChip.chipBackgroundColor = ColorStateList.valueOf(
+            ContextCompat.getColor(this, backgroundColorRes)
+        )
+        tvStorageModeChip.setTextColor(ContextCompat.getColor(this, textColorRes))
     }
 
     private fun updateAuthorizationBanner() {

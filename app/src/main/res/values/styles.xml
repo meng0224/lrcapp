@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextAppearance.LrcApp.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.LrcApp.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.LrcApp.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.LrcApp.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.LrcApp.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="TextAppearance.LrcApp.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.LrcApp.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.LrcApp.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+        <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="Widget.LrcApp.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">24dp</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="cardElevation">0dp</item>
+    </style>
+
+    <style name="Widget.LrcApp.Card.Section" parent="Widget.LrcApp.Card">
+        <item name="cardBackgroundColor">@color/md_theme_light_surfaceContainerLow</item>
+    </style>
+
+    <style name="Widget.LrcApp.Card.Emphasis" parent="Widget.LrcApp.Card">
+        <item name="cardBackgroundColor">@color/md_theme_light_primaryContainer</item>
+    </style>
+
+    <style name="Widget.LrcApp.Card.Warning" parent="Widget.LrcApp.Card">
+        <item name="cardBackgroundColor">@color/warning_container</item>
+    </style>
+
+    <style name="Widget.LrcApp.Button.Filled" parent="Widget.Material3.Button">
+        <item name="cornerRadius">18dp</item>
+        <item name="android:minHeight">52dp</item>
+    </style>
+
+    <style name="Widget.LrcApp.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="cornerRadius">18dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <style name="Widget.LrcApp.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">40dp</item>
+    </style>
+
+    <style name="Widget.LrcApp.Chip.Assist" parent="Widget.Material3.Chip.Assist">
+        <item name="chipCornerRadius">999dp</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="android:minHeight">32dp</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
+    <style name="Widget.LrcApp.Chip.Status" parent="Widget.LrcApp.Chip.Assist" />
+
+    <style name="Widget.LrcApp.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="useMaterialThemeColors">true</item>
+    </style>
+</resources>

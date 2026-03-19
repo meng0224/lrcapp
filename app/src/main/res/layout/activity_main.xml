@@ -5,22 +5,27 @@
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_default"
+    android:background="?attr/colorSurface"
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="?attr/colorPrimary">
+        android:background="?attr/colorSurface"
+        android:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
+            style="@style/Widget.LrcApp.Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
+            android:minHeight="72dp"
+            android:paddingStart="8dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="8dp"
             app:subtitle="@string/main_toolbar_subtitle"
-            app:subtitleTextColor="@color/white"
-            app:title="@string/main_toolbar_title"
-            app:titleTextColor="@color/white" />
+            app:title="@string/main_toolbar_title" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -28,7 +33,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingBottom="168dp"
+        android:paddingBottom="176dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -39,64 +44,58 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/authBannerCard"
+                style="@style/Widget.LrcApp.Card.Warning"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:visibility="gone"
-                app:cardBackgroundColor="@color/warning_bg"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="#FFE0B2"
-                app:strokeWidth="1dp">
+                app:strokeColor="@color/warning_onContainer">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:id="@+id/tvAuthBannerTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="需要授權存取目錄"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-                        android:textColor="@color/warning_text"
-                        android:textStyle="bold" />
+                        android:text="@string/auth_banner_title"
+                        android:textAppearance="@style/TextAppearance.LrcApp.TitleMedium"
+                        android:textColor="@color/warning_onContainer" />
 
                     <TextView
                         android:id="@+id/tvAuthBannerMessage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="首次寫入來源資料夾時，請授權存取權限。"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                        android:textColor="@color/warning_text" />
+                        android:layout_marginTop="8dp"
+                        android:text="@string/auth_banner_message"
+                        android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
+                        android:textColor="@color/warning_onContainer" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAuthorizeSourceDir"
-                        style="@style/Widget.MaterialComponents.Button"
+                        style="@style/Widget.LrcApp.Button.Filled"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="授權目錄" />
+                        android:layout_marginTop="14dp"
+                        android:text="@string/authorize_directory" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/storageCard"
+                style="@style/Widget.LrcApp.Card.Section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/surface_card"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/outline_subtle"
-                app:strokeWidth="1dp">
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -109,43 +108,35 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/storage_section_title"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-                            android:textColor="@color/text_primary"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LrcApp.TitleMedium" />
 
-                        <TextView
+                        <com.google.android.material.chip.Chip
                             android:id="@+id/tvStorageModeChip"
+                            style="@style/Widget.LrcApp.Chip.Status"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/badge_background_neutral"
-                            android:paddingStart="10dp"
-                            android:paddingTop="6dp"
-                            android:paddingEnd="10dp"
-                            android:paddingBottom="6dp"
-                            android:text="預設"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                            android:textColor="@color/text_secondary"
-                            android:textStyle="bold" />
+                            android:text="@string/storage_mode_chip_default"
+                            app:chipBackgroundColor="@color/status_pending_container"
+                            app:chipMinHeight="32dp"
+                            app:chipStrokeWidth="0dp"
+                            android:textColor="@color/status_pending_onContainer" />
                     </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvOutputDir"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
+                        android:layout_marginTop="16dp"
                         android:text="@string/storage_mode_default"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                        android:textColor="@color/text_primary"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LrcApp.TitleLarge" />
 
                     <TextView
                         android:id="@+id/tvOutputDirHint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="6dp"
                         android:text="/storage/emulated/0/Download"
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                        android:textColor="@color/text_secondary" />
+                        android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
 
                     <LinearLayout
                         android:id="@+id/layoutCustomOutputActions"
@@ -156,29 +147,29 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSelectOutputDir"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            style="@style/Widget.LrcApp.Button.Text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="選擇目錄" />
+                            android:text="@string/select_directory" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnClearOutputDir"
-                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            style="@style/Widget.LrcApp.Button.Text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="清除目錄" />
+                            android:text="@string/clear_directory" />
                     </LinearLayout>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@color/outline_subtle" />
+                        android:layout_marginTop="10dp"
+                        android:background="?attr/colorOutline" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -192,19 +183,17 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/storage_mode_source"
-                                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                                android:textColor="@color/text_primary" />
+                                android:textAppearance="@style/TextAppearance.LrcApp.BodyLarge" />
 
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
+                                android:layout_marginTop="4dp"
                                 android:text="@string/storage_source_hint"
-                                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                                android:textColor="@color/text_secondary" />
+                                android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/switchOutputToSourceDirectory"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
@@ -213,13 +202,13 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@color/outline_subtle" />
+                        android:layout_marginTop="10dp"
+                        android:background="?attr/colorOutline" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -233,19 +222,17 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/recursive_import_title"
-                                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-                                android:textColor="@color/text_primary" />
+                                android:textAppearance="@style/TextAppearance.LrcApp.BodyLarge" />
 
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
+                                android:layout_marginTop="4dp"
                                 android:text="@string/recursive_import_hint"
-                                android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                                android:textColor="@color/text_secondary" />
+                                android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/switchRecursiveImport"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
@@ -255,20 +242,18 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/progressCard"
+                style="@style/Widget.LrcApp.Card.Emphasis"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:visibility="gone"
-                app:cardBackgroundColor="@color/brand_primary_light"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="#90CAF9"
-                app:strokeWidth="1dp">
+                app:strokeColor="@color/md_theme_light_primary">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -280,36 +265,37 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="轉換進度"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-                            android:textColor="@color/brand_primary_dark"
-                            android:textStyle="bold" />
+                            android:text="@string/progress_section_title"
+                            android:textAppearance="@style/TextAppearance.LrcApp.TitleMedium"
+                            android:textColor="?attr/colorOnPrimaryContainer" />
 
                         <TextView
                             android:id="@+id/tvProgressCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0/0"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                            android:textColor="@color/brand_primary_dark" />
+                            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
+                            android:textColor="?attr/colorOnPrimaryContainer" />
                     </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/progressBar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="14dp"
                         android:max="100"
-                        android:progress="0" />
+                        android:progress="0"
+                        app:indicatorColor="?attr/colorPrimary"
+                        app:trackColor="?attr/colorSurfaceVariant" />
 
                     <TextView
                         android:id="@+id/tvProgress"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="正在處理文件..."
-                        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                        android:textColor="@color/brand_primary" />
+                        android:layout_marginTop="10dp"
+                        android:text="@string/progress_placeholder"
+                        android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
+                        android:textColor="?attr/colorOnPrimaryContainer" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -325,18 +311,15 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="文件列表"
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-                    android:textColor="@color/text_primary"
-                    android:textStyle="bold" />
+                    android:text="@string/file_list_title"
+                    android:textAppearance="@style/TextAppearance.LrcApp.TitleMedium" />
 
                 <TextView
                     android:id="@+id/tvFileSummary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=""
-                    android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                    android:textColor="@color/text_secondary" />
+                    android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
             </LinearLayout>
 
             <LinearLayout
@@ -346,13 +329,10 @@
                 android:orientation="vertical">
 
                 <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.LrcApp.Card.Emphasis"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:cardBackgroundColor="@color/surface_subtle"
-                    app:cardCornerRadius="16dp"
-                    app:strokeColor="@color/outline_subtle"
-                    app:strokeWidth="1dp">
+                    android:layout_marginBottom="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -361,56 +341,50 @@
                         android:orientation="vertical"
                         android:padding="24dp">
 
-                        <TextView
-                            android:layout_width="56dp"
-                            android:layout_height="56dp"
-                            android:background="@drawable/empty_state_icon_background"
-                            android:gravity="center"
-                            android:text="LRC"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-                            android:textColor="@color/brand_primary"
-                            android:textStyle="bold" />
+                        <com.google.android.material.chip.Chip
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/empty_state_badge"
+                            android:textAppearance="@style/TextAppearance.LrcApp.LabelLarge"
+                            app:chipBackgroundColor="?attr/colorSurface"
+                            android:textColor="?attr/colorPrimary"
+                            app:chipIconVisible="false"
+                            app:chipStrokeColor="?attr/colorOutline"
+                            app:chipStrokeWidth="1dp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:text="尚未選擇文件"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
-                            android:textColor="@color/text_primary"
-                            android:textStyle="bold" />
+                            android:layout_marginTop="18dp"
+                            android:text="@string/empty_state_title"
+                            android:textAppearance="@style/TextAppearance.LrcApp.TitleLarge" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:gravity="center"
                             android:text="@string/supported_formats"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                            android:textColor="@color/text_secondary" />
+                            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.LrcApp.Card.Section"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="16dp"
-                    app:strokeColor="@color/outline_subtle"
-                    app:strokeWidth="1dp">
+                    android:layout_height="wrap_content">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="20dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="格式說明"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                            android:textColor="@color/text_secondary" />
+                            android:text="@string/format_explainer_title"
+                            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
 
                         <TextView
                             android:id="@+id/tvEmptyFormats"
@@ -418,23 +392,18 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="@string/supported_formats"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-                            android:textColor="@color/text_primary" />
+                            android:textAppearance="@style/TextAppearance.LrcApp.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
 
-                        <TextView
+                        <com.google.android.material.chip.Chip
                             android:id="@+id/tvEmptyOutputFormat"
+                            style="@style/Widget.LrcApp.Chip.Status"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:background="@drawable/status_background_processing"
-                            android:paddingStart="10dp"
-                            android:paddingTop="6dp"
-                            android:paddingEnd="10dp"
-                            android:paddingBottom="6dp"
+                            android:layout_marginTop="14dp"
                             android:text="@string/output_format"
-                            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-                            android:textColor="@color/status_processing_text"
-                            android:textStyle="bold" />
+                            app:chipBackgroundColor="@color/status_processing_container"
+                            android:textColor="@color/status_processing_onContainer" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
@@ -451,12 +420,12 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottomActionsCard"
+        style="@style/Widget.LrcApp.Card.Section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:cardBackgroundColor="@color/surface_card"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="10dp">
+        app:cardCornerRadius="28dp"
+        app:cardElevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -466,10 +435,10 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConvert"
-                style="@style/Widget.MaterialComponents.Button"
+                style="@style/Widget.LrcApp.Button.Filled"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="選擇文件" />
+                android:text="@string/select_files" />
 
             <LinearLayout
                 android:id="@+id/secondaryActionsRow"
@@ -481,21 +450,23 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSelectFiles"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    style="@style/Widget.LrcApp.Button.Outlined"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:text="重新選擇" />
+                    android:text="@string/reselect_files" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnClearFileList"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    style="@style/Widget.LrcApp.Button.Text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="清除列表" />
+                    android:text="@string/clear_file_list" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+
