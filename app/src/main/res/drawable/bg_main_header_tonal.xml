@@ -4,7 +4,5 @@
         android:angle="90"
         android:endColor="@color/md_theme_light_header_end"
         android:startColor="@color/md_theme_light_header_start" />
-    <corners
-        android:bottomLeftRadius="36dp"
-        android:bottomRightRadius="36dp" />
+    <corners android:radius="32dp" />
 </shape>

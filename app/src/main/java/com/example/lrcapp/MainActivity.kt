@@ -71,7 +71,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fileListCard: View
     private lateinit var secondaryActionsRow: View
     private lateinit var layoutCustomOutputActions: View
-    private lateinit var bottomActionsCard: View
 
     private val files = mutableListOf<SubtitleFile>()
     private var settings = AppSettings()
@@ -166,7 +165,6 @@ class MainActivity : AppCompatActivity() {
         fileListCard = findViewById(R.id.fileListCard)
         secondaryActionsRow = findViewById(R.id.secondaryActionsRow)
         layoutCustomOutputActions = findViewById(R.id.layoutCustomOutputActions)
-        bottomActionsCard = findViewById(R.id.bottomActionsCard)
     }
 
     private fun loadSettings() {
@@ -1044,7 +1042,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showFeedback(message: String) {
         Snackbar.make(rootLayout, message, Snackbar.LENGTH_SHORT)
-            .setAnchorView(bottomActionsCard)
+            .setAnchorView(btnConvert)
             .show()
     }
 

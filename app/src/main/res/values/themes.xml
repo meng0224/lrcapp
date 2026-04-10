@@ -28,6 +28,8 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">@color/md_theme_light_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="toolbarStyle">@style/Widget.LrcApp.Toolbar</item>
         <item name="materialCardViewStyle">@style/Widget.LrcApp.Card</item>
         <item name="materialButtonStyle">@style/Widget.LrcApp.Button.Filled</item>
