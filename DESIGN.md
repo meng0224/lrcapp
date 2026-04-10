@@ -1,5 +1,94 @@
 # DESIGN.md
 
+## Reference-specific target for LrcApp home screen
+
+## Reference-specific target for LrcApp home screen
+
+When a reference image is provided for the LrcApp home screen, prefer matching that image’s layout language and color composition over generic Material 3 defaults.
+
+### Overall composition
+
+The target home screen should feel like:
+- a tinted full-screen background
+- a plain top header with a large title and short subtitle
+- three prominent stacked cards
+- low visual clutter
+- strong spacing rhythm
+- minimal nested structure
+
+### Layout rules
+
+The screen should not be structured like a traditional Android settings page.
+
+Preferred structure:
+1. plain header
+2. first large info card
+3. second large settings card
+4. third large file/action card
+
+Avoid:
+- giant hero cards wrapping the header
+- floating bottom action sheets over scrolling content
+- many small repeated cards stacked inside larger cards
+- settings-list skeletons with only cosmetic Material styling
+
+### Card strategy
+
+Use a small number of large cards.
+Each major card should feel like a complete visual block.
+
+Cards should have:
+- large rounded corners
+- soft tonal fill
+- minimal border emphasis
+- strong internal padding
+- enough vertical spacing between cards
+
+Avoid:
+- hard outlines
+- dense nested subsections
+- cards used only as thin wrappers around other cards
+
+### Color composition
+
+Do not use a generic white/gray Android utility palette.
+
+Prefer:
+- one dominant hue family per theme
+- tinted background related to the active hue
+- clearly differentiated card tones
+- controls that inherit the same palette
+
+The result should feel color-composed, not merely “MD3-like”.
+
+### Header
+
+The header should be visually simple:
+- large app title
+- short subtitle
+- generous spacing before the first card
+
+Do not wrap the whole header in a hero card unless explicitly requested.
+
+### File / action area
+
+The file list empty state and the primary CTA should belong to the same major card.
+
+The primary CTA should:
+- feel integrated into the card
+- be visually dominant
+- not float above other content
+- not behave like an overlay
+
+### Specific anti-patterns to avoid
+
+- legacy utility-form look
+- floating bottom action panel
+- card-inside-card-inside-card main structure
+- visual clutter added just to look modern
+- mixed unrelated colors on the same screen
+- long explanatory paragraphs used to fill space
+
 ## Purpose
 
 This file defines the visual design system for **LrcApp**.

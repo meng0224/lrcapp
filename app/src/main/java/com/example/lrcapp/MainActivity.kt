@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchRecursiveImport: MaterialSwitch
     private lateinit var toolbar: MaterialToolbar
     private lateinit var emptyStateContainer: View
+    private lateinit var fileListCard: View
     private lateinit var secondaryActionsRow: View
     private lateinit var layoutCustomOutputActions: View
     private lateinit var bottomActionsCard: View
@@ -138,6 +139,8 @@ class MainActivity : AppCompatActivity() {
         rootLayout = findViewById(R.id.rootLayout)
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
+        toolbar.title = ""
+        toolbar.subtitle = ""
 
         recyclerView = findViewById(R.id.recyclerView)
         authBannerCard = findViewById(R.id.authBannerCard)
@@ -160,6 +163,7 @@ class MainActivity : AppCompatActivity() {
         switchOutputToSourceDirectory = findViewById(R.id.switchOutputToSourceDirectory)
         switchRecursiveImport = findViewById(R.id.switchRecursiveImport)
         emptyStateContainer = findViewById(R.id.emptyStateContainer)
+        fileListCard = findViewById(R.id.fileListCard)
         secondaryActionsRow = findViewById(R.id.secondaryActionsRow)
         layoutCustomOutputActions = findViewById(R.id.layoutCustomOutputActions)
         bottomActionsCard = findViewById(R.id.bottomActionsCard)
@@ -996,6 +1000,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         emptyStateContainer.visibility = if (files.isEmpty()) View.VISIBLE else View.GONE
+        fileListCard.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
         recyclerView.visibility = if (files.isEmpty()) View.GONE else View.VISIBLE
     }
 

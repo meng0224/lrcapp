@@ -27,10 +27,19 @@
     <color name="md_theme_light_inverseSurface">#2C3137</color>
     <color name="md_theme_light_inverseOnSurface">#EDF1F8</color>
     <color name="md_theme_light_inversePrimary">#A5C8FF</color>
-    <color name="md_theme_light_surfaceContainerLow">#F1F4F8</color>
-    <color name="md_theme_light_surfaceContainer">#EBEEF3</color>
-    <color name="md_theme_light_surfaceContainerHigh">#E5E8ED</color>
-    <color name="md_theme_light_surfaceContainerHighest">#DDE2E8</color>
+    <color name="md_theme_light_surfaceContainerLow">#F3F6FB</color>
+    <color name="md_theme_light_surfaceContainer">#EAF0F7</color>
+    <color name="md_theme_light_surfaceContainerHigh">#DFE8F2</color>
+    <color name="md_theme_light_surfaceContainerHighest">#D5E0EC</color>
+
+    <color name="md_theme_light_header_start">#E6F0FF</color>
+    <color name="md_theme_light_header_end">#F7F9FC</color>
+    <color name="md_theme_light_empty_panel_start">#E8F2FF</color>
+    <color name="md_theme_light_empty_panel_end">#D7E7FF</color>
+    <color name="md_theme_light_bottom_action_start">#F8FBFF</color>
+    <color name="md_theme_light_bottom_action_end">#E6EEF8</color>
+    <color name="md_theme_light_hero_badge">#F0F5FF</color>
+    <color name="md_theme_light_list_surface">#F8FAFD</color>
 
     <color name="status_pending_container">@color/md_theme_light_surfaceVariant</color>
     <color name="status_pending_onContainer">@color/md_theme_light_onSurfaceVariant</color>

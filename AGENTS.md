@@ -1,13 +1,81 @@
 # AGENTS.md
 
-## 開始
+## UI task priority rules
 
-.nexus-map/ 存在时：开始任务前必须先读 INDEX.md 恢复上下文，并按其中的路由块决定下一步动作。
+For any home screen / layout / theme / style / visual refactor task:
 
-.nexus-map/ 不存在时：跨模块/接口修改前，先向用户提议运行 nexus-mapper；若用户需立即开始，至少先运行 query_graph.py --summary 建立结构感知，不要对陌生仓库盲改核心接口。
-结构查询：任何时候需要判断依赖关系、影响半径或边界归属，优先用 query_graph.py 验证，不要凭目录名猜测。
+- Read `DESIGN.md` first.
+- Treat `DESIGN.md` as the visual source of truth.
+- Use the attached reference image as the primary visual target when one is provided.
+- For complex UI tasks, plan first before editing code.
+- Fix layout skeleton before applying color or cosmetic styling.
+- Do not stop at minor cosmetic changes.
+- The result must be visibly different in screenshots.
 
-知识库同步：任务中若改变了系统边界、入口或依赖关系，完成后评估是否需要重新运行 nexus-mapper 更新 .nexus-map。
+### Home screen target structure
+
+Unless explicitly told otherwise, the LrcApp home screen should follow this structure:
+
+1. plain top header:
+   - app title
+   - subtitle
+   - not a hero card
+
+2. first large card:
+   - format / capability summary
+
+3. second large card:
+   - storage location and related settings
+
+4. third large card:
+   - file list / empty state / primary actions
+
+### Hard UI constraints
+
+- Do not keep a floating bottom action card over the page content.
+- Do not rely on oversized scroll bottom padding to compensate for floating overlays.
+- Do not use deep card-inside-card-inside-card nesting for the main home screen.
+- Do not add new feature sections just to make the screen look fuller.
+- Keep existing behavior, workflow, and strings unless explicitly requested.
+- Do not migrate to Compose unless explicitly requested.
+
+## UI done definition
+
+A UI task is not done unless:
+
+- the screenshot clearly reads as a plain header plus a few large cards
+- the screen no longer looks like a legacy Android settings form
+- primary actions are visually obvious and live inside the correct content card
+- empty state looks intentional
+- there are no overlaps, clipping, or compressed controls
+- the screen is visibly closer to the provided reference image
+
+## UI rules
+
+For any UI / layout / theme / style task:
+
+- Read `DESIGN.md` first.
+- Treat `DESIGN.md` as the visual source of truth.
+- Do not stop at minor cosmetic changes.
+- The result must be visibly different in screenshots.
+- Prefer Material You / Material Design 3 visual language:
+  - tonal containers
+  - clear hierarchy
+  - large rounded corners
+  - spacious layout rhythm
+  - strong primary CTA
+- Avoid old Android utility-form aesthetics.
+- Keep existing functionality and workflow unchanged unless explicitly requested.
+
+## Done definition for UI tasks
+
+A UI task is not done unless:
+
+- the screenshot looks clearly more polished than before
+- the screen no longer reads like a legacy settings form
+- primary actions are visually obvious
+- sections are grouped by container hierarchy, not hard borders
+- the empty state looks intentional
 
 ## 用途
 

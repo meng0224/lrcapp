@@ -24,14 +24,21 @@
         <item name="colorSurfaceVariant">@color/md_theme_light_surfaceVariant</item>
         <item name="colorOnSurfaceVariant">@color/md_theme_light_onSurfaceVariant</item>
         <item name="colorOutline">@color/md_theme_light_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_light_outlineVariant</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">@color/md_theme_light_background</item>
+        <item name="toolbarStyle">@style/Widget.LrcApp.Toolbar</item>
+        <item name="materialCardViewStyle">@style/Widget.LrcApp.Card</item>
+        <item name="materialButtonStyle">@style/Widget.LrcApp.Button.Filled</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.LrcApp.DisplayLarge</item>
         <item name="textAppearanceHeadlineSmall">@style/TextAppearance.LrcApp.HeadlineSmall</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.LrcApp.TitleSmall</item>
         <item name="textAppearanceTitleLarge">@style/TextAppearance.LrcApp.TitleLarge</item>
         <item name="textAppearanceTitleMedium">@style/TextAppearance.LrcApp.TitleMedium</item>
         <item name="textAppearanceBodyLarge">@style/TextAppearance.LrcApp.BodyLarge</item>
         <item name="textAppearanceBodyMedium">@style/TextAppearance.LrcApp.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.LrcApp.BodySmall</item>
         <item name="textAppearanceLabelLarge">@style/TextAppearance.LrcApp.LabelLarge</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.LrcApp.LabelMedium</item>
     </style>

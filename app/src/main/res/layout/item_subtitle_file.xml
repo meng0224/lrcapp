@@ -2,16 +2,19 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardView"
-    style="@style/Widget.LrcApp.Card.Section"
+    style="@style/Widget.LrcApp.Card.ListItem"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp">
+    android:layout_marginBottom="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="18dp">
+        android:paddingStart="20dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -20,31 +23,46 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/tvFileName"
-                android:layout_width="0dp"
+                android:id="@+id/tvFileFormat"
+                style="@style/TextAppearance.LrcApp.MetaLabel"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:maxLines="1"
-                android:text="@string/item_file_name_placeholder"
-                android:textAppearance="@style/TextAppearance.LrcApp.BodyLarge"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
+                android:background="@drawable/empty_state_icon_background"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:text="@string/item_file_format_placeholder"
+                android:textColor="?attr/colorOnPrimaryContainer" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/tvStatus"
                 style="@style/Widget.LrcApp.Chip.Status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
                 android:text="@string/item_status_pending"
-                app:chipBackgroundColor="@color/status_pending_container"
-                android:textColor="@color/status_pending_onContainer" />
+                android:textColor="@color/status_pending_onContainer"
+                app:chipBackgroundColor="@color/status_pending_container" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvFileName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:maxLines="2"
+            android:text="@string/item_file_name_placeholder"
+            android:textAppearance="@style/TextAppearance.LrcApp.TitleMedium" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -54,34 +72,27 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/item_file_size_placeholder"
-                android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/tvFileFormat"
-                style="@style/Widget.LrcApp.Chip.Status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/item_file_format_placeholder"
-                app:chipBackgroundColor="@color/status_pending_container"
-                android:textColor="@color/status_pending_onContainer" />
+                android:textAppearance="@style/TextAppearance.LrcApp.MetaLabel" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/tvOutputFileName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
+            android:maxLines="2"
             android:text="@string/item_output_placeholder"
-            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
+            android:textAppearance="@style/TextAppearance.LrcApp.SupportingText"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvErrorMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
+            android:maxLines="3"
             android:text="@string/item_error_placeholder"
-            android:textAppearance="@style/TextAppearance.LrcApp.BodyMedium"
+            android:textAppearance="@style/TextAppearance.LrcApp.SupportingText"
             android:textColor="?attr/colorError"
             android:visibility="gone" />
 
