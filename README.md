@@ -9,6 +9,7 @@ LrcApp 是一個 Android 字幕轉換工具，可將常見字幕格式轉成 LRC
 - [PHASE2_VALIDATION_REPORT.md](./PHASE2_VALIDATION_REPORT.md) - Android 版本差異與 Phase 2 驗證記錄
 - [PHASE3_TEST_HARDENING.md](./PHASE3_TEST_HARDENING.md) - 測試補強、執行鏈路與阻塞
 - [FIGMA_DESIGN_PROMPT_PACK.md](./FIGMA_DESIGN_PROMPT_PACK.md) - 可直接交給設計師或設計型 AI 的 Figma 設計提示詞包
+- [後續路線建議.md](./後續路線建議.md) - Phase 4 之後的策略發展方向與優先級建議
 
 ## 主要功能
 
