@@ -41,67 +41,27 @@
                     android:minHeight="56dp" />
 
                 <TextView
-                    android:id="@+id/tvHeroTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="22dp"
-                    android:text="@string/main_toolbar_title"
-                    android:textAppearance="@style/TextAppearance.LrcApp.DisplayLarge" />
-
-                <TextView
                     android:id="@+id/tvHeroSubtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:text="@string/main_toolbar_subtitle"
-                    android:textAppearance="@style/TextAppearance.LrcApp.SupportingText" />
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/formatCard"
-                style="@style/Widget.LrcApp.Card.Feature"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
-
-                <LinearLayout
+                    android:textAppearance="@style/TextAppearance.LrcApp.HeadlineSmall" />
+                <TextView
+                    android:id="@+id/tvHeaderFormats"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="24dp">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/tvEmptyOutputFormat"
-                        style="@style/Widget.LrcApp.Chip.Status"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/output_format"
-                        android:textColor="?attr/colorOnPrimaryContainer"
-                        app:chipBackgroundColor="?attr/colorPrimaryContainer" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="@string/supported_formats"
-                        android:textAppearance="@style/TextAppearance.LrcApp.PanelHeadline" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/format_explainer_title"
-                        android:textAppearance="@style/TextAppearance.LrcApp.SupportingText"
-                        android:textColor="?attr/colorOnPrimaryContainer" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    android:layout_marginTop="10dp"
+                    android:text="@string/supported_formats"
+                    android:textAppearance="@style/TextAppearance.LrcApp.SupportingText" />
+            </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/storageCard"
                 style="@style/Widget.LrcApp.Card.Section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp">
+                android:layout_marginTop="14dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
